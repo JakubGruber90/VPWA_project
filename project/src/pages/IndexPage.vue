@@ -1,49 +1,88 @@
 <template>
-  <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
+  <q-page>
+    <q-chat-message
+        name="me"
+        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
+        :text="['hey, how are you?']"
+        sent
+        stamp="7 minutes ago"
+      />
+      <q-chat-message
+        name="Jane"
+        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
+        :text="['doing fine, how r you?']"
+        stamp="4 minutes ago"
+      />
+      <q-chat-message
+        name="me"
+        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
+        :text="['Wanna go to a cinema on sunday?']"
+        sent
+        stamp="7 minutes ago"
+      />
+      <q-chat-message
+        name="Jane"
+        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
+        :text="['Sure that would be great']"
+        stamp="4 minutes ago"
+      />
+      <q-chat-message
+        name="me"
+        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
+        :text="['Nice see well talk over the details tomorrow']"
+        sent
+        stamp="7 minutes ago"
+      />
+      <q-chat-message
+        name="Jane"
+        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
+        :text="['Ok']"
+        stamp="4 minutes ago"
+      />
+
+    <q-footer elevated>
+      <div class="q-gutter-xs row items-center">
+        <q-input 
+          class="col q-pa-md custom-scrollbar"
+          style="max-height: 300px; overflow-y: auto;"
+          bg-color="white" 
+          text-color="black" 
+          rounded outlined autogrow
+          v-model="message" 
+          placeholder="Message #channel_name"
+          type="text"/>
+        <q-btn class="q-mr-md" round flat icon="send" />
+      </div>
+    </q-footer>
   </q-page>
 </template>
 
 <script lang="ts">
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'IndexPage',
-  components: { ExampleComponent },
+  components: {  },
   data () {
-    const todos: Todo[] = [
-      {
-        id: 1,
-        content: 'ct1'
-      },
-      {
-        id: 2,
-        content: 'ct2'
-      },
-      {
-        id: 3,
-        content: 'ct3'
-      },
-      {
-        id: 4,
-        content: 'ct4'
-      },
-      {
-        id: 5,
-        content: 'ct5'
-      }
-    ];
-    const meta: Meta = {
-      totalCount: 1200
-    };
-    return { todos, meta };
+    return {
+      message: '',
+    }
   }
 });
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 10px; 
+  background: #807e7e;
+}
+</style>
