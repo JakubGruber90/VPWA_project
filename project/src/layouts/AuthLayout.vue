@@ -1,0 +1,41 @@
+<template>
+    <q-layout view="hHh Lpr lFf">
+        <q-page-container>
+            <div class="auth-container">
+                <div class="form">
+                    <router-view />
+                </div>
+            </div>
+        </q-page-container>
+  </q-layout>
+</template>
+
+<script>
+
+</script>
+
+<style>
+    html, body {
+        height: 100%;
+        overflow: hidden; /* Prevent the scrollbar from appearing */
+    }
+
+    .auth-container {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(to bottom, #21BA45, #71c98b);
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .form {
+        width: 380px;
+        height: 480px;
+        border-radius: 20px;
+        box-shadow: 0 0 20px 9px #21BA45;
+        background-color: white;
+        position: relative;
+    }
+</style>
