@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated class="bg-primary text-white">
+    <q-header class="bg-primary text-white">
       <q-toolbar>
         <q-btn
           flat
@@ -18,7 +18,7 @@
     </q-header>
 
     <q-drawer
-    class="bg-primary"
+    class="bg-secondary"
       v-model="leftDrawerOpen"
     >
     <div class="channel">Channel 1</div>
@@ -61,9 +61,10 @@ export default defineComponent({
 .channel {
   font-size: large;
   padding: 11px;
+  color: white;
 }
 
 .channel:hover {
-  background-color: #3d9181;
+  background-color: #2c5a51;
 }
 </style>
