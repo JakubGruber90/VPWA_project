@@ -31,8 +31,8 @@
     }
 
     .form {
-        width: 380px;
-        height: 480px;
+        width: 400px;
+        height: 600px;
         border-radius: 20px;
         box-shadow: 0 0 20px 9px #21BA45;
         background-color: white;
