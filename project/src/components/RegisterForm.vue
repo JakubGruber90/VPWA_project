@@ -1,6 +1,8 @@
 <template>
     <q-page>
         <div class="input-group">
+            <q-input v-model="name" label="Meno" :dense="dense" style="width: 200px; height: 50px;"/>
+            <q-input v-model="surname" label="Priezvisko" :dense="dense" style="width: 200px; height: 50px;"/>
             <q-input v-model="email" label="Email" :dense="dense" style="width: 200px; height: 50px;"/>
             <q-input v-model="username" label="Pouzivatelske meno" :dense="dense" style="width: 200px; height: 50px;"/>
             <q-input v-model="password" label="Heslo" :dense="dense" :type="isPwd ? 'password' : 'text'" style="width: 200px; height: 50px;">
@@ -34,6 +36,8 @@
     export default {
         data() {
             return {
+                name: '',
+                surname: '',
                 email: '',
                 username: '',
                 password: '',
@@ -67,7 +71,7 @@
 
     .login-btn {
         margin: 0 auto; /* Center the button horizontally */
-        margin-top: 100px; /* Add top margin as needed */
+        margin-top: 30px; /* Add top margin as needed */
         display: flex;
         align-items: center;
         justify-content: center;
