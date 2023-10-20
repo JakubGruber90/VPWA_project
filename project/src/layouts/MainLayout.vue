@@ -2,18 +2,42 @@
   <q-layout view="lHh Lpr lFf">
     <q-header class="bg-primary text-white">
       <q-toolbar>
-        <q-btn
+        <div class="channel-text">
+          <q-btn
           flat
           round
           icon="menu"
           aria-label="Menu"
           @click="toggleLeftDrawer"
         />
+        <q-badge rounded color="red" label="3" class="badge-absolute-main"/>
+      </div>
 
         <q-toolbar-title>
           #Channel name
         </q-toolbar-title>
-
+        <div class="">
+          <q-btn
+          size="20px"
+            flat
+            round
+            color="white"
+            icon="account_circle"   
+            @click="toggleProfileDropdown"
+          />
+          <div v-if="showProfileDropdown && !showStateDropdown" class="custom-profile-dropdown" @click="toggleProfileDropdown">
+            <q-list class="">
+              <q-item clickable @click="toggleStateDropdown" class="text-weight-medium">State</q-item>
+              <q-item clickable @click="logout" class="text-weight-medium">Logout</q-item>
+            </q-list>
+          </div>
+          <div v-if="showStateDropdown" class="custom-profile-dropdown" @click="toggleStateDropdown">
+            <q-list>
+              <q-item clickable @click="navigateToProfile"  class="text-weight-medium" >Active <q-badge rounded color="light-green-14" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+              <q-item clickable @click="logout" class="text-weight-medium">Busy<q-badge rounded color="red" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+            </q-list>
+          </div>
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -29,9 +53,13 @@
           @click="openCreateChannelModal"
         />
       </div>
-      <div class="channel" v-for="(channel, index) in channels" :key="index">
+      <div class="channel " v-for="(channel, index) in channels" :key="index">
+        <div class="channel-text">
           {{ channel.name }}
-          <q-icon name="keyboard_arrow_right" class="exit-icon" @click="openExitModal(channel)" />
+          <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
+          <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
+        </div>
+        <q-icon name="keyboard_arrow_right" class="exit-icon" @click="openExitModal(channel)" />        
       </div>
     </q-drawer>
 
@@ -99,7 +127,9 @@ export default defineComponent({
       currentChannel: {
         name: '',
         isPrivate: false
-      }
+      },
+      showProfileDropdown: false,
+      showStateDropdown: false,
     }
   },
 
@@ -133,6 +163,21 @@ export default defineComponent({
     closeCreateChannelModal() {
       this.createChannelModalOpen = false;
     },
+    toggleProfileDropdown() {
+      this.showProfileDropdown = !this.showProfileDropdown;
+    },
+
+    toggleStateDropdown() {
+      this.showStateDropdown = !this.showStateDropdown;
+    },
+    navigateToProfile() {
+      //
+    },
+    logout() {
+      if(this.showProfileDropdown){
+        this.$router.push({ name: 'loginPage' });
+      }
+    },
   }
 });
 </script>
@@ -159,4 +204,22 @@ export default defineComponent({
   .channel:hover {
     background-color: #2c5a51;
   }
+
+.badge-absolute {
+  position: absolute;
+  top: -10px;
+  right: 30;
+}
+
+.badge-absolute-main {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.channel-text {
+  position: relative;
+  display: inline-block;
+}
+
 </style>
