@@ -49,7 +49,7 @@
         <q-btn
           flat
           icon="add"
-          label="Vytvoriť kanál"
+          label="Add channel"
           @click="openCreateChannelModal"
         />
       </div>
@@ -59,7 +59,7 @@
           <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
           <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
         </div>
-        <q-icon name="keyboard_arrow_right" class="exit-icon" @click="openExitModal(channel)" />        
+        <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(index)" />        
       </div>
     </q-drawer>
 
@@ -70,13 +70,12 @@
     <q-dialog v-model="exitModalOpen" persistent>
       <q-card>
         <q-card-section class="row items-center">
-          <q-avatar icon="signal_wifi_off" color="primary" text-color="white" />
-          <span class="q-ml-sm">You are currently not connected to any network.</span>
+         <span class="q-ml-sm">Are you sure you want to leave the channel?</span>
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Yes" color="negative" @click="leaveChannel" />
-          <q-btn flat label="No" @click="closeExitModal" />
+          <q-btn flat label="Leave" color="negative" @click="leaveChannel" />
+          <q-btn flat label="Cancel" @click="closeExitModal" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -85,11 +84,11 @@
       <q-card>
         <q-card-section>
           <q-input
-            v-model="currentChannel.name"
+            v-model="newChannel.name"
             label="Channel Name"
           />
           <q-toggle
-            v-model="currentChannel.isPrivate"
+            v-model="newChannel.isPrivate"
             label="Is Private"
           />
         </q-card-section>
@@ -124,12 +123,13 @@ export default defineComponent({
       ],
       exitModalOpen: false,
       createChannelModalOpen: false,
-      currentChannel: {
+      newChannel: {
         name: '',
         isPrivate: false
       },
       showProfileDropdown: false,
       showStateDropdown: false,
+      channelToLeaveIndex: -1
     }
   },
 
@@ -138,7 +138,8 @@ export default defineComponent({
       this.leftDrawerOpen = !this.leftDrawerOpen
     },
 
-    openExitModal(channel: { name: string }) {
+    openExitModal(index: number) {
+      this.channelToLeaveIndex = index;
       this.exitModalOpen = true;
     },
 
@@ -147,8 +148,11 @@ export default defineComponent({
     },
 
     leaveChannel() {
-      //be
-      this.closeExitModal();
+      if (this.channelToLeaveIndex !== -1) {
+        this.channels.splice(this.channelToLeaveIndex, 1);
+        this.closeExitModal();
+        this.channelToLeaveIndex = -1;
+      }
     },
 
     openCreateChannelModal() {
@@ -156,7 +160,13 @@ export default defineComponent({
     },
 
     createChannel() {
-      this.channels.push(this.currentChannel); 
+      const newChannelInstance = { ...this.newChannel };
+
+      this.channels.push(newChannelInstance);
+
+      this.newChannel.name = '';
+      this.newChannel.isPrivate = false;
+
       this.closeCreateChannelModal();
     },
 
