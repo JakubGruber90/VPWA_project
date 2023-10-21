@@ -1,118 +1,36 @@
 <template>
   <q-page>
-    <div>
-      <q-infinite-scroll reverse class="scroll">
-        <q-chat-message
-        name="me"
-        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
-        :text="['hey, how are you?']"
-        sent
-        stamp="7 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['doing fine, how r you?']"
-        stamp="4 minutes ago"
-      />
-      <q-chat-message
-        name="me"
-        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
-        :text="['Wanna go to a cinema on sunday?']"
-        sent
-        stamp="7 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Sure that would be great']"
-        stamp="4 minutes ago"
-      />
-      <q-chat-message
-        name="me"
-        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
-        :text="['Nice see well talk over the details tomorrow']"
-        sent
-        stamp="7 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Ok']"
-        stamp="4 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Sure that would be great']"
-        stamp="4 minutes ago"
-      />
-      <q-chat-message
-        name="me"
-        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
-        :text="['Nice see well talk over the details tomorrow']"
-        sent
-        stamp="7 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Ok']"
-        stamp="4 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Sure that would be great']"
-        stamp="4 minutes ago"
-      />
-      <q-chat-message
-        name="me"
-        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
-        :text="['Nice see well talk over the details tomorrow']"
-        sent
-        stamp="7 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Ok']"
-        stamp="4 minutes ago"
-      /><q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Sure that would be great']"
-        stamp="4 minutes ago"
-      />
-      <q-chat-message
-        name="me"
-        avatar="https://cdn.quasar.dev/img/avatar4.jpg"
-        :text="['Nice see well talk over the details tomorrow']"
-        sent
-        stamp="7 minutes ago"
-      />
-      <q-chat-message
-        name="Jane"
-        avatar="https://cdn.quasar.dev/img/avatar3.jpg"
-        :text="['Ok']"
-        stamp="4 minutes ago"
-      />
-      </q-infinite-scroll>
-    </div>
-    
+    <q-infinite-scroll reverse @load="onLoad" :offset="0" class="scroll">
 
-    <q-footer class="full-width input">
-      <q-input 
-      class="full-width q-pa-md custom-scrollbar"
-      style="max-height: 200px; overflow-y: auto;"
-      bg-color="white" 
-      text-color="black" 
-      rounded outlined autogrow
-      v-model="message" 
-      placeholder="Message #channel_name"
-      type="text"
-      @keyup.enter="sendMessage"/>
-      <q-btn class="q-mr-md" round flat icon="send" @click="sendMessage"/>  
+        <template v-slot:loading>  
+        <div class="row justify-center q-my-md">
+          <q-spinner-dots color="primary" size="40px" />
+        </div>
+      </template>
+
+      <q-chat-message v-for="(message, index) in messageList" :key="index"
+        :name="message.name"
+        :avatar="message.avatar"
+        :text="message.text"
+        :sent="message.sent"
+        :stamp="message.stamp"
+        class="chat-message-text"/>
+    </q-infinite-scroll>
+    
+    <q-footer>
+      <q-form v-on:submit="sendMessage" class="full-width input">
+        <q-input 
+        v-model="messageText" 
+        class="full-width q-pa-md custom-scrollbar"
+        style="max-height: 200px; overflow-y: auto;"
+        bg-color="white" 
+        text-color="black" 
+        rounded outlined autogrow
+        placeholder="Message #channel_name"
+        type="text"
+        @keydown.enter.prevent="sendMessage"/>
+        <q-btn class="q-mr-md" round flat icon="send" type="submit"/>
+      </q-form>
     </q-footer>
   </q-page>
 </template>
@@ -125,15 +43,37 @@ export default defineComponent({
   components: {  },
   data () {
     return {
-      message: '',
+      messageText: '',
+      isLoading: false,
+      messageList: [
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["hey, how are you?"], sent: true, stamp: "7 minutes ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
+      ],
     }
   },
 
   methods: {
-    sendMessage (event: any) {
-      if (!event.shiftKey || event.click) {
-        this.message = ''
-      }
+    sendMessage () {
+      const newMessageText = this.messageText 
+      this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"})
+      this.messageText = ''
+    },
+    
+    onLoad (index: any, done: any) { 
+      setTimeout(() => {
+        this.messageList.unshift(...[{name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["The trip last year was great, we should go again!!"], sent: true, stamp: "two weeks ago"},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Maybe next year?"], sent: true, stamp: "two weeks ago"},])
+
+        done()
+      }, 2000);
     },
   }
 });
@@ -148,22 +88,11 @@ export default defineComponent({
 
 .scroll {
   padding: 10px;
-  height: 75vh;
-  overflow: auto;
+  height: 79.1vh;
+  overflow-y: auto;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  padding-right: 20px;
-}
-
-::-webkit-scrollbar-track {
-  border-radius: 10px;
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 10px; 
-  background: #b2aaaa;
+.chat-message-text {
+  white-space: pre-wrap;
 }
 </style>

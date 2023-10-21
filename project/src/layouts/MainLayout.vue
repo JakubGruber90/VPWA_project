@@ -67,7 +67,7 @@
       <router-view />
     </q-page-container>
 
-    <q-dialog v-model="exitModalOpen" persistent>
+    <q-dialog v-model="exitModalOpen" persistent ref="leaveChannelModal">
       <q-card>
         <q-card-section class="row items-center">
          <span class="q-ml-sm">Are you sure you want to leave the channel?</span>
@@ -86,6 +86,8 @@
           <q-input
             v-model="newChannel.name"
             label="Channel Name"
+            @keyup.enter="createChannel"
+            @keyup.escape="closeCreateChannelModal"
           />
           <q-toggle
             v-model="newChannel.isPrivate"
