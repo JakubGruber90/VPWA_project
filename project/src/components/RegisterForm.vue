@@ -1,11 +1,11 @@
 <template>
     <q-page>
         <div class="input-group">
-            <q-input v-model="name" label="Meno" :dense="dense" style="width: 200px; height: 50px;"/>
-            <q-input v-model="surname" label="Priezvisko" :dense="dense" style="width: 200px; height: 50px;"/>
-            <q-input v-model="email" label="Email" :dense="dense" style="width: 200px; height: 50px;"/>
-            <q-input v-model="username" label="Pouzivatelske meno" :dense="dense" style="width: 200px; height: 50px;"/>
-            <q-input v-model="password" label="Heslo" :dense="dense" :type="isPwd ? 'password' : 'text'" style="width: 200px; height: 50px;">
+            <q-input v-model="name" label="Name"  style="width: 200px; height: 50px;"/>
+            <q-input v-model="surname" label="Surname"  style="width: 200px; height: 50px;"/>
+            <q-input v-model="email" label="Email"  style="width: 200px; height: 50px;"/>
+            <q-input v-model="username" label="Username"  style="width: 200px; height: 50px;"/>
+            <q-input v-model="password" label="Password"  :type="isPwd ? 'password' : 'text'" style="width: 200px; height: 50px;">
                 <template v-slot:append>
                 <q-icon
                     :name="isPwd ? 'visibility_off' : 'visibility'"
@@ -14,7 +14,7 @@
                 />
                 </template>
             </q-input>
-            <q-input v-model="passwordRepeated" label="Zopakuj heslo" :dense="dense" :type="isPwd ? 'password' : 'text'" style="width: 200px; height: 50px;">
+            <q-input v-model="passwordRepeated" label="Repeat password" :dense="dense" :type="isPwd ? 'password' : 'text'" style="width: 200px; height: 50px;">
                 <template v-slot:append>
                 <q-icon
                     :name="isPwd ? 'visibility_off' : 'visibility'"
@@ -26,7 +26,7 @@
         </div>
         <q-btn
             class="login-btn"
-            label="Registrovat sa"
+            label="Register"
             @click="register"
         />
     </q-page>

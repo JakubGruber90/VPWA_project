@@ -4,13 +4,13 @@
         <div class="button-box">
             <q-btn
                 class="toggle-btn"
-                label="Prihlasenie"
+                label="Log in"
                 @click="showLogin"
                 :class="{ 'active': activeComponent === 'LoginForm' }"
             />
             <q-btn
                 class="toggle-btn"
-                label="Registracia"
+                label="Register"
                 @click="showRegister"
                 :class="{ 'active': activeComponent === 'RegisterForm' }"
             />
@@ -49,14 +49,14 @@
         width: 220px;
         margin: 35px auto;
         position: relative;
-        box-shadow: 0 0 20px 9px #21BA45;
+        box-shadow: 0 0 20px 9px #429a8a;
         border-radius: 30px;
         display: flex;
         justify-content: space-between;
     }
 
     h1 { 
-        color:  #21BA45; 
+        color:  #429a8a; 
         font-family: 'Raleway',sans-serif; 
         font-size: 30px; 
         font-weight: 800; 
@@ -79,7 +79,7 @@
     }
 
     .toggle-btn.active {
-        background: linear-gradient(to bottom, #21BA45, #71c98b);
+        background: #429a8a;
         transition: .5s;
     }
 </style>

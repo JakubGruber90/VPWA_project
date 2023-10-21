@@ -23,7 +23,7 @@
     .auth-container {
         height: 100%;
         width: 100%;
-        background: linear-gradient(to bottom, #21BA45, #71c98b);
+        background: #429a8a;
         position: absolute;
         display: flex;
         justify-content: center;
@@ -34,7 +34,7 @@
         width: 400px;
         height: 600px;
         border-radius: 20px;
-        box-shadow: 0 0 20px 9px #21BA45;
+        box-shadow: 0 0 20px 9px #429a8a;
         background-color: white;
         position: relative;
     }

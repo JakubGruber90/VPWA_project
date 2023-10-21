@@ -3,14 +3,12 @@
         <div class="input-group">
         <q-input 
             v-model="username" 
-            label="Pouzivatelske meno" 
-            :dense="dense" 
+            label="Username"  
             style="width: 200px; 
             height: 50px;"/>
         <q-input 
             v-model="password" 
-            label="Heslo" 
-            :dense="dense" 
+            label="Password" 
             :type="isPwd ? 'password' : 'text'" 
             style="width: 200px; 
             height: 50px;">
@@ -25,7 +23,7 @@
         </div>
         <q-btn
             class="login-btn"
-            label="Prihlasit sa"
+            label="Login"
             @click="login"
         />
     </q-page>
@@ -65,8 +63,8 @@
     }
 
     .login-btn {
-        margin: 0 auto; /* Center the button horizontally */
-        margin-top: 100px; /* Add top margin as needed */
+        margin: 0 auto; 
+        margin-top: 100px; 
         display: flex;
         align-items: center;
         justify-content: center;
