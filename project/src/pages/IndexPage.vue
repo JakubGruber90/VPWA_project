@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <q-infinite-scroll reverse @load="onLoad" :offset="0" class="scroll">
+    <q-infinite-scroll reverse @load="onLoad" :offset="0" class="scroll" ref="infScroll">
 
         <template v-slot:loading>  
         <div class="row justify-center q-my-md">
@@ -15,6 +15,7 @@
         :sent="message.sent"
         :stamp="message.stamp"
         class="chat-message-text"/>
+      <div><UsersTyping popup-text="I am typing all sorts of stuff hopefully you dont see it because I'm calling you ugly words" user-name="Lisa"/><UsersTyping popup-text="HihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii" user-name="Johny"/><q-spinner-dots color="gray" size="17px"/></div>
     </q-infinite-scroll>
     
     <q-footer>
@@ -28,7 +29,8 @@
         rounded outlined autogrow
         placeholder="Message #channel_name"
         type="text"
-        @keydown.enter.prevent="sendMessage"/>
+        @keydown.enter.prevent="sendMessage"
+        @keydown.shift="addNewline"/>
         <q-btn class="q-mr-md" round flat icon="send" type="submit"/>
       </q-form>
     </q-footer>
@@ -36,11 +38,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { Component, defineComponent } from 'vue';
+import UsersTyping from '../components/UsersTyping.vue'
+import { QInfiniteScroll } from 'quasar';
 
 export default defineComponent({
   name: 'IndexPage',
-  components: {  },
+  components: { UsersTyping }, //UsersTyping
   data () {
     return {
       messageText: '',
@@ -61,12 +65,27 @@ export default defineComponent({
   },
 
   methods: {
-    sendMessage () {
-      const newMessageText = this.messageText 
-      this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"})
-      this.messageText = ''
+    sendMessage (event: any) {
+      var newMessageText = this.messageText;
+
+      if (newMessageText === '' || event.shiftKey) {
+        return;
+      }
+
+      this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"});
+      this.messageText = '';
+
+      this.$nextTick(() => {
+        (this.$refs.infScroll as QInfiniteScroll).setIndex(0);
+      });
     },
-    
+
+    addNewline(event: KeyboardEvent) {
+    if (event.key === 'Enter' && event.shiftKey) {
+      this.messageText += '\n';
+    }
+  },
+
     onLoad (index: any, done: any) { 
       setTimeout(() => {
         this.messageList.unshift(...[{name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["The trip last year was great, we should go again!!"], sent: true, stamp: "two weeks ago"},

@@ -14,7 +14,7 @@
       </div>
 
         <q-toolbar-title>
-          #Channel name
+          #Channel Name
         </q-toolbar-title>
         <div class="">
           <q-btn
@@ -58,8 +58,8 @@
           {{ channel.name }}
           <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
           <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
-        </div>
-        <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(index)" />        
+        </div> 
+        <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(index)" />     
       </div>
     </q-drawer>
 

@@ -17,7 +17,6 @@ body::-webkit-scrollbar {
 
 ::-webkit-scrollbar {
   width: 10px;
-  padding-right: 20px;
 }
 
 ::-webkit-scrollbar-track {
@@ -28,5 +27,6 @@ body::-webkit-scrollbar {
 ::-webkit-scrollbar-thumb {
   border-radius: 10px; 
   background: #b2aaaa;
+  padding: 20px;
 }
 </style>
