@@ -16,25 +16,27 @@
         <q-toolbar-title>
           #Channel Name
         </q-toolbar-title>
-        <div class="">
+        <div class="" style="position: relative;">
           <q-btn
           size="20px"
             flat
             round
             color="white"
             icon="account_circle"   
-            @click="toggleProfileDropdown"
+            @click="toggleProfileDropdown"          
           />
-          <div v-if="showProfileDropdown && !showStateDropdown" class="custom-profile-dropdown" @click="toggleProfileDropdown">
+          <q-badge rounded color="light-green-14" style="position: absolute;top: 10%; left: 0px;" />
+
+          <div v-if="showProfileDropdown && !showStateDropdown" class="custom-profile-dropdown status-modal" @click="toggleProfileDropdown">
             <q-list class="">
               <q-item clickable @click="toggleStateDropdown" class="text-weight-medium">State</q-item>
               <q-item clickable @click="logout" class="text-weight-medium">Logout</q-item>
             </q-list>
           </div>
-          <div v-if="showStateDropdown" class="custom-profile-dropdown" @click="toggleStateDropdown">
+          <div v-if="showStateDropdown" class="custom-profile-dropdown  status-modal" @click="toggleStateDropdown">
             <q-list>
               <q-item clickable @click="navigateToProfile"  class="text-weight-medium" >Active <q-badge rounded color="light-green-14" style="position: absolute;top: 25%; right: 0px;" /></q-item>
-              <q-item clickable @click="logout" class="text-weight-medium">Busy<q-badge rounded color="red" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+              <q-item clickable @click="logout" class="text-weight-medium" >Busy<q-badge rounded color="red" style="position: absolute;top: 25%; right: 0px;" /></q-item>
             </q-list>
           </div>
         </div>
@@ -232,6 +234,14 @@ export default defineComponent({
 .channel-text {
   position: relative;
   display: inline-block;
+}
+
+.status-modal{
+  position: absolute;
+  background-color: #2c5a51;
+  left: -10px;
+  right: 0;
+  width: 82px;
 }
 
 </style>
