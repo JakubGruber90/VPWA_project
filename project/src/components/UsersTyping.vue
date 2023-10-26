@@ -2,23 +2,66 @@
   <span>
     <a class="user">
       <q-popup-proxy anchor="bottom right" self="top right">
-        <q-card class="popupMessage">{{ userName }}'s message:<br> {{ popupText }}</q-card>
-      </q-popup-proxy>
-
-      {{ userName }}</a> 
-      is typing  
-  </span>
-
+        <q-list class="typingUserList">
+          <q-item clickable v-for="(user, index) in users" :key="index" @click="openMessageDialog(user)">
+            <a>
+              <q-avatar :name="user.name" :avatar="user.avatar" class="q-mb-sm">
+                <img :src="user.avatar" />
+              </q-avatar>
+              {{ user.name }}
+            </a>
+          </q-item>
+        </q-list>
+      </q-popup-proxy>Users</a> are typing  
+    </span>
+  
+    <q-dialog seamless v-if="messageDialogeOpened" v-model="messageDialogeOpened">
+      <q-card>
+        <q-btn rounded flat color="primary" icon="close" @click="closeMessageDialog" />
+        <q-card-section>
+          {{ userName }}'s Message:<br> 
+          {{ userMessage }}
+        </q-card-section>
+      </q-card>
+    </q-dialog>
 </template>
 
+
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent } from 'vue';
+
 export default defineComponent({
   name: 'UsersTyping',
 
-  props: {
-    popupText: String,
-    userName: String,
+  data () {
+    return {
+      messageDialogeOpened: false,
+      userMessage: '',
+      userName: '',
+
+      users: [
+        {name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", message: "Typing something, I want to see what it does."},
+        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", message: "You SEE what I TYPE? That's pretty creepy. I think I'll uninstall this app"},
+        {name: "Brad", avatar: "https://cdn.quasar.dev/img/avatar1.jpg", message: "Boink"},
+        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "We should go camping sometime soon. I'm so bored you would ot believe."},
+
+        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "We should go camping sometime soon. I'm so bored you would ot believe."},
+        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "We should go camping sometime soon. I'm so bored you would ot believe."},
+        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "We should go camping sometime soon. I'm so bored you would ot believe."},
+      ],
+    }
+  },
+
+  methods: {
+    openMessageDialog(user: {name: string, avatar: string, message: string}) {
+      this.userMessage = user.message;
+      this.userName = user.name;
+      this.messageDialogeOpened = true;
+    },
+
+    closeMessageDialog() {
+      this.messageDialogeOpened = false;
+    },
   },
 })
 </script>
@@ -35,11 +78,12 @@ span {
   font-weight: 300;
 }
 
-.popupMessage {
-  max-height: 150px;
-  max-width: 150px;
+.typingUserList {
+  max-height: 250px;
+  width: 180px;
+  max-width: 200px;
   overflow: auto;
-  word-wrap: break-word;
   padding: 10px;
+  word-wrap: break-word;
 }
 </style>
