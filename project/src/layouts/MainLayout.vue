@@ -47,21 +47,39 @@
       class="bg-secondary"
       v-model="leftDrawerOpen"
     >
-      <div class="create-channel-btn">
+      <div class="create-channel-conatiner">
         <q-btn
+          color="white"
+          class="create-channel-btn"
           flat
           icon="add"
           label="Add channel"
           @click="openCreateChannelModal"
         />
+      </div>  
+      <div class="channel-section">
+        <div class="separator-line"></div>
+        <div class="section-title">Public Channels</div>
+        <div class="separator-line"></div>
+        <div class="channel" v-for="(channel, index) in publicChannels" :key="index">
+          <div class="channel-text">
+            {{ channel.name }}
+            <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
+            <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
+          </div> 
+          <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.name)" />     
+        </div>
       </div>
-      <div class="channel " v-for="(channel, index) in channels" :key="index">
-        <div class="channel-text">
-          {{ channel.name }}
-          <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
-          <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
-        </div> 
-        <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(index)" />     
+      <div class="channel-section">
+        <div class="separator-line"></div>
+        <div class="section-title">Private Channels</div>
+        <div class="separator-line"></div>
+        <div class="channel" v-for="(channel, index) in privateChannels" :key="index">
+          <div class="channel-text">
+            {{ channel.name }}
+          </div> 
+          <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.name)" />     
+        </div>
       </div>
     </q-drawer>
 
@@ -108,6 +126,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import { useQuasar } from 'quasar'
 
 export default defineComponent({
   name: 'MainLayout',
@@ -116,14 +135,33 @@ export default defineComponent({
     
   },
 
+  setup () {
+            const $q = useQuasar()
+
+            return {
+                showNotif (errorMessage: string) {
+                    $q.notify({
+                        timeout: 1500,
+                        message: errorMessage, 
+                        color: 'negative',
+                        multiLine: true,
+                        type: 'negative',
+                        actions: [
+                            { label: 'understand', color: 'yellow', handler: () => { /* ... */ } }
+                        ]
+                    })
+                }
+            }
+        },
+
   data() {
     return {
       leftDrawerOpen: false,
       channels: [
-        { name: 'Channel 1' },
-        { name: 'Channel 2' },
-        { name: 'Channel 3' },
-        { name: 'Channel 4' },
+        { name: 'Channel 1', isPrivate: true },
+        { name: 'Channel 2', isPrivate: false },
+        { name: 'Channel 8', isPrivate: false },
+        { name: 'Channel 9', isPrivate: true },
       ],
       exitModalOpen: false,
       createChannelModalOpen: false,
@@ -133,8 +171,17 @@ export default defineComponent({
       },
       showProfileDropdown: false,
       showStateDropdown: false,
-      channelToLeaveIndex: -1
+      channelToLeaveName: '',
     }
+  },
+
+  computed: {
+    publicChannels() {
+      return this.channels.filter((channel) => !channel.isPrivate);
+    },
+    privateChannels() {
+      return this.channels.filter((channel) => channel.isPrivate);
+    },
   },
 
   methods: {
@@ -142,8 +189,8 @@ export default defineComponent({
       this.leftDrawerOpen = !this.leftDrawerOpen
     },
 
-    openExitModal(index: number) {
-      this.channelToLeaveIndex = index;
+    openExitModal(channelName: string) {
+      this.channelToLeaveName = channelName;
       this.exitModalOpen = true;
     },
 
@@ -152,10 +199,12 @@ export default defineComponent({
     },
 
     leaveChannel() {
-      if (this.channelToLeaveIndex !== -1) {
-        this.channels.splice(this.channelToLeaveIndex, 1);
+      const index = this.channels.findIndex((channel) => channel.name === this.channelToLeaveName);
+
+      if (index !== -1) {
+        this.channels.splice(index, 1);
         this.closeExitModal();
-        this.channelToLeaveIndex = -1;
+        this.channelToLeaveName = '';
       }
     },
 
@@ -164,6 +213,10 @@ export default defineComponent({
     },
 
     createChannel() {
+      if (this.newChannel.name.length < 1) {
+        this.showNotif("Channel must have name")
+        return
+      } 
       const newChannelInstance = { ...this.newChannel };
 
       this.channels.push(newChannelInstance);
@@ -206,13 +259,19 @@ export default defineComponent({
     color: white;
   }
 
-  .create-channel-btn {
+  .create-channel-container, .section-title {
     display: flex; 
-    justify-content: space-between;  
+    justify-content: center;  
     align-items: center;
     font-size: large;
     padding: 11px;
     color: white;
+  }
+
+  .create-channel-btn {
+    color: white; 
+    background-color: #2c5a51;
+    width: 100%;
   }
 
   .channel:hover {
@@ -242,6 +301,16 @@ export default defineComponent({
   left: -10px;
   right: 0;
   width: 82px;
+}
+
+.section-title {
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.separator-line {
+  border-top: 1px solid white;
 }
 
 </style>
