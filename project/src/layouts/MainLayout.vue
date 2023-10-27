@@ -214,9 +214,15 @@ export default defineComponent({
 
     createChannel() {
       if (this.newChannel.name.length < 1) {
-        this.showNotif("Channel must have name")
-        return
+        this.showNotif('Channel name is required');
+        return;
       } 
+
+      if (this.newChannel.name.length > 20) {
+        this.showNotif("Surname can have a maximum of 20 characters!");
+        return;
+      }
+
       const newChannelInstance = { ...this.newChannel };
 
       this.channels.push(newChannelInstance);

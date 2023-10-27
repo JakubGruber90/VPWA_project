@@ -86,45 +86,29 @@
             },
 
             validation() {
-                if (this.name.trim() === '') {
-                    return 'Name is required';
+                const fields = [
+                    { name: this.name, label: 'Name', maxLength: 20 },
+                    { name: this.surname, label: 'Surname', maxLength: 20 },
+                    { name: this.email, label: 'Email', pattern: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/ },
+                    { name: this.username, label: 'Username', maxLength: 15 },
+                    { name: this.password, label: 'Password' },
+                    { name: this.passwordRepeated, label: 'Repeated Password' }
+                ];
+
+                for (const field of fields) {
+                    if (!field.name || field.name.trim() === '') {
+                        return `${field.label} is required`;
+                    }
+                    if (field.maxLength && field.name.length > field.maxLength) {
+                        return `${field.label} can have a maximum of ${field.maxLength} characters`;
+                    }
+                    if (field.pattern && !field.pattern.test(field.name)) {
+                        return `The ${field.label} does not have the correct format`;
+                    }
                 }
 
-                if (this.surname.trim() === '') {
-                    return 'Surname is required';
-                }
-
-                if (this.email.trim() === '') {
-                    return 'Email is required';
-                }
-
-                if (this.username.trim() === '') {
-                    return 'Username is required';
-                }
-
-                if (this.password.trim() === '') {
-                    return 'Password is required';
-                }
-
-                if(this.name.length > 20) {
-                    return 'Name can have a maximum of 20 characters!';
-                }
-
-                if(this.surname.length > 20) {
-                    return 'Surname can have a maximum of 20 characters!';
-                }
-
-                if(this.username.length > 15) {
-                    return 'Username can have a maximum of 15 characters!'; 
-                }
-
-                if(this.password !== this.passwordRepeated) {
-                    return "Passwords do not match!";
-                }
-
-                const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-                if(!emailPattern.test(this.email)) {
-                    return "The email does not have the correct format";
+                if (this.password !== this.passwordRepeated) {
+                    return "Passwords do not match";
                 }
 
                 return true;
