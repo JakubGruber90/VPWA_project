@@ -9,12 +9,26 @@
       </template>
 
       <q-chat-message v-for="(message, index) in messageList" :key="index"
-        :name="message.name"
-        :avatar="message.avatar"
         :text="message.text"
         :sent="message.sent"
-        :stamp="message.stamp"
-        class="chat-message-text"/>
+      >
+        <template v-slot:name>{{message.name}}</template>
+        <template v-slot:stamp>{{message.stamp}}</template>
+        <template v-slot:avatar>
+          <div style="position: relative;">
+            <img
+              class="q-message-avatar q-message-avatar--sent"
+              :src="message.avatar"
+            >
+            <q-badge
+              rounded
+              :color="'light-green-14'"
+              style="position: absolute; top: 0px; right: 0px;"
+            />
+          </div>
+        </template>
+      </q-chat-message>
+
       <div><UsersTyping popup-text="I am typing all sorts of stuff hopefully you dont see it because I'm calling you ugly words" user-name="Lisa"/><UsersTyping popup-text="HihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii" user-name="Johny"/><q-spinner-dots color="gray" size="17px"/></div>
     </q-infinite-scroll>
     
