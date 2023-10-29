@@ -15,7 +15,7 @@
       </q-popup-proxy>Users</a> are typing  
     </span>
   
-    <q-dialog seamless v-if="messageDialogeOpened" v-model="messageDialogeOpened">
+    <q-dialog seamless v-if="messageDialogeOpened" v-model="messageDialogeOpened">  
       <q-card>
         <q-btn rounded flat color="primary" icon="close" @click="closeMessageDialog" />
         <q-card-section>
@@ -70,12 +70,16 @@ export default defineComponent({
 span {
   color: gray;
   font-style: oblique;
-  font-size: 14px;
+  font-size: 15px;
+}
+
+.user {
+  color: #429a8a;
+  font-weight: 600;
 }
 
 .user:hover {
-  color: #429a8a;
-  font-weight: 300;
+  color: #35524c;
 }
 
 .typingUserList {

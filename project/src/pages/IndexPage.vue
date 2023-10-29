@@ -29,7 +29,7 @@
         </template>
       </q-chat-message>
 
-      <div><UsersTyping popup-text="I am typing all sorts of stuff hopefully you dont see it because I'm calling you ugly words" user-name="Lisa"/><UsersTyping popup-text="HihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiHihiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii" user-name="Johny"/><q-spinner-dots color="gray" size="17px"/></div>
+      <div><UsersTyping/><q-spinner-dots color="gray" size="17px"/></div>
     </q-infinite-scroll>
     
     <q-footer>
@@ -58,7 +58,7 @@ import { QInfiniteScroll } from 'quasar';
 
 export default defineComponent({
   name: 'IndexPage',
-  components: { UsersTyping }, //UsersTyping
+  components: { UsersTyping },
   data () {
     return {
       messageText: '',
@@ -89,9 +89,7 @@ export default defineComponent({
       this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"});
       this.messageText = '';
 
-      this.$nextTick(() => {
-        (this.$refs.infScroll as QInfiniteScroll).setIndex(0);
-      });
+     
     },
 
     addNewline(event: KeyboardEvent) {
