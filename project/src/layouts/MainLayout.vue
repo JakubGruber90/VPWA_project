@@ -23,14 +23,16 @@
             round
             color="white"
             icon="account_circle"   
-            @click="toggleProfileDropdown"          
+            @click="toggleProfileDropdown"
           />
           <q-badge rounded :color="status == 'offline' ? 'red' : 'light-green-14'" style="position: absolute; top: 25%; right: 0px;"/>
 
           <div v-if="showProfileDropdown && !showStateDropdown" class="custom-profile-dropdown status-modal" @click="toggleProfileDropdown">
             <q-list class="">
-              <q-item clickable @click="toggleStateDropdown" class="text-weight-medium">State</q-item>
-              <q-item clickable @click="logout" class="text-weight-medium">Logout</q-item>
+              <q-item clickable @click="toggleStateDropdown" class="text-weight-medium profileDropdownBtn">State</q-item>
+              <q-item clickable @click="logout" class="text-weight-medium profileDropdownBtn">Logout</q-item>
+              <hr>
+              <q-toggle v-model="notifsOff" label="Notifications" left-label class="text-weight-medium profileDropdownBtn" checked-icon="check" unchecked-icon="clear"/>
             </q-list>
           </div>
           <div v-if="showStateDropdown" class="custom-profile-dropdown  status-modal" @click="toggleStateDropdown">
@@ -156,6 +158,7 @@ export default defineComponent({
 
   data() {
     return {
+      notifsOff: false,
       leftDrawerOpen: false,
       channels: [
         { name: 'Channel 1', isPrivate: true },
@@ -305,9 +308,9 @@ export default defineComponent({
 .status-modal{
   position: absolute;
   background-color: #2c5a51;
-  left: -10px;
+  left: -65px;
   right: 0;
-  width: 82px;
+  width: 140px;
 }
 
 .section-title {
@@ -318,6 +321,13 @@ export default defineComponent({
 
 .separator-line {
   border-top: 1px solid white;
+}
+
+.profileDropdownBtn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
 </style>
