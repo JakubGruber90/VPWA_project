@@ -11,6 +11,7 @@
       <q-chat-message v-for="(message, index) in messageList" :key="index"
         :text="message.text"
         :sent="message.sent"
+        class="chat-message-text"
       >
         <template v-slot:name>{{message.name}}</template>
         <template v-slot:stamp>{{message.stamp}}</template>
@@ -82,17 +83,15 @@ export default defineComponent({
     sendMessage (event: any) {
       var newMessageText = this.messageText;
 
-      if (newMessageText === '' || event.shiftKey) {
+      if (newMessageText.trim() === '' || event.shiftKey) {
         return;
       }
 
       this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"});
       this.messageText = '';
-
-     
     },
 
-    addNewline(event: KeyboardEvent) {
+    addNewline(event: any) {
     if (event.key === 'Enter' && event.shiftKey) {
       this.messageText += '\n';
     }
