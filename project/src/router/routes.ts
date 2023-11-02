@@ -2,9 +2,12 @@ import { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/home',
+    path: '/channels',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '/home', name: 'homePage', component: () => import('pages/IndexPage.vue') }],
+    children: [
+      { path: '/channels', name: 'homePage', component: () => import('pages/IndexPage.vue') },
+      { path: '/:id', name: 'channelPage', component: () => import('pages/IndexPage.vue') }
+    ],
   },
 
   {

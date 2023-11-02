@@ -63,7 +63,7 @@
         <div class="separator-line"></div>
         <div class="section-title">Public Channels</div>
         <div class="separator-line"></div>
-        <div class="channel" v-for="(channel, index) in publicChannels" :key="index">
+        <div class="channel" v-for="(channel, index) in publicChannels" :key="index"  @click="() => navigateToChannel(channel.id)">
           <div class="channel-text">
             {{ channel.name }}
             <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
@@ -75,7 +75,7 @@
         <div class="separator-line"></div>
         <div class="section-title">Private Channels</div>
         <div class="separator-line"></div>
-        <div class="channel" v-for="(channel, index) in privateChannels" :key="index">
+        <div class="channel" v-for="(channel, index) in privateChannels" :key="index" @click="() => navigateToChannel(channel.id)">
           <div class="channel-text">
             {{ channel.name }}
             <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
@@ -160,12 +160,7 @@ export default defineComponent({
     return {
       notifsOff: false,
       leftDrawerOpen: false,
-      channels: [
-        { name: 'Channel 1', isPrivate: true },
-        { name: 'Channel 2', isPrivate: false },
-        { name: 'Channel 8', isPrivate: false },
-        { name: 'Channel 9', isPrivate: true },
-      ],
+      channels: [],
       exitModalOpen: false,
       createChannelModalOpen: false,
       newChannel: {
@@ -181,14 +176,28 @@ export default defineComponent({
 
   computed: {
     publicChannels() {
-      return this.channels.filter((channel) => !channel.isPrivate);
+      return this.channels.filter((channel:any) => channel.type == "public");
     },
     privateChannels() {
-      return this.channels.filter((channel) => channel.isPrivate);
+      return this.channels.filter((channel:any) => channel.type == "private");
     },
   },
-
+  mounted() {
+    this.fetchData(); 
+  },
   methods: {
+    fetchData() {
+      fetch('http://localhost:3333')
+        .then((response) => {
+          response.json().then((data) => {
+            this.channels = data;
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    },
+
     toggleLeftDrawer () {
       this.leftDrawerOpen = !this.leftDrawerOpen
     },
@@ -255,6 +264,9 @@ export default defineComponent({
         this.$router.push({ name: 'loginPage' });
       }
     },
+    navigateToChannel(channelId: number){
+      this.$router.push({ name: 'channelPage', params: { id: channelId } });
+    }
   }
 });
 </script>

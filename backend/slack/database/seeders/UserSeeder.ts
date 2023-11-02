@@ -1,20 +1,18 @@
 import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
-import Database from '@ioc:Adonis/Lucid/Database'
+import User from 'App/Models/User'
 
 export default class UserSeeder extends BaseSeeder {
   public async run () {
     const userData = {
-      nickname: 'User1',
+      nickname: 'jozo',
       firstname: 'First1',
       lastname: 'Last1',
-      email: 'user1@example.com',
-      password: 'hashedpassword', 
-      status: 'active',
-      personal_notification: false,
-      created_at: new Date(),
-      updated_at: new Date(),
+      email: 'jozo@jozo.sk',
+      password: '123456', 
+      status: 'active' as 'active',
+      personal_notification: false
     };
 
-    await Database.table('users').insert(userData);
+    await User.create(userData)
   }
 }

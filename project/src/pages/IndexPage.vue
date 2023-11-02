@@ -87,8 +87,39 @@ export default defineComponent({
         return;
       }
 
+      
       this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"});
-      this.messageText = '';
+      
+      const messageData = {
+      name: "Lisa",
+      channel: "Helou",
+      text: newMessageText,
+      stamp: "now",
+    };
+
+    // Send a POST request to the server
+    fetch('http://localhost:3333/message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messageData), 
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json(); 
+        } else {
+          throw new Error('Request failed');
+        }
+      })
+      .then((data) => {
+        console.log('Response from server:', data);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+
+    this.messageText = '';
     },
 
     addNewline(event: any) {

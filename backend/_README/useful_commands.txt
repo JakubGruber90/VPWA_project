@@ -1,14 +1,14 @@
+node ace serve --watch - spustenie backendu
 node ace migration:run  - nahodenie tabuliek do vasej db
-node ace make:controller HomeController
-node ace serve --watch - spustenie
 
-node ace make:migration test     
-node ace make:seeder UserSeeder
-node ace db:seed --files database/seeders/UserSeeder
+node ace make:controller HomeController  -- vyvorenie controllera
+
+node ace make:seeder UserSeeder  -- ak budete potrebovat nahodit data do tabuliek
+node ace db:seed --files database/seeders/UserSeeder - spustenie seedra
 
 ! NOTES !
 
 1. Netreba env setupovat
-2. je tam jednoduchy endpoint (definovany v routes) s controllerom vo foldri app, kde je demo na select,update, delete a insert do db
+2. je tam jednoduchy endpoint (definovany v routes) s controllerom vo foldri app, kde je basic demo (praca s db s modelmi)
 3. v  app je tiez folder websocket, kde je setupnuty
-4. vo foldri database su migracie (tabulky) a seedre na naplnenie do db ... seeder je tam ako demo ak to bude treba
+4. vo foldri database su migracie (tabulky), modely a seedre na naplnenie do db ... seeder je tam ako demo ak to bude treba
