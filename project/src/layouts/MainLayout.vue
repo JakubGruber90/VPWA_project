@@ -68,7 +68,7 @@
             {{ channel.name }}
             <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
           </div> 
-          <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.name)" />     
+          <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.id)" />     
         </div>
       </div>
       <div class="channel-section">
@@ -80,7 +80,7 @@
             {{ channel.name }}
             <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
           </div> 
-          <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.name)" />     
+          <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.id)" />     
         </div>
       </div>
     </q-drawer>
@@ -96,7 +96,7 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Leave" color="negative" @click="leaveChannel" />
+          <q-btn flat label="Leave" color="negative" @click="leaveRequest" />
           <q-btn flat label="Cancel" @click="closeExitModal" />
         </q-card-actions>
       </q-card>
@@ -129,6 +129,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useQuasar } from 'quasar'
+import { supabase } from 'app/config/supabase';
 
 export default defineComponent({
   name: 'MainLayout',
@@ -170,7 +171,7 @@ export default defineComponent({
       showProfileDropdown: false,
       showStateDropdown: false,
       status: "online",
-      channelToLeaveName: '',
+      channelToLeaveId: -1,
     }
   },
 
@@ -197,13 +198,39 @@ export default defineComponent({
           console.error(err);
         });
     },
+    leaveRequest() {
+
+      const requestData  = {
+      id: 1
+    };
+  fetch('http://localhost:3333/channels/:id', {
+    method: 'DELETE',
+    body: JSON.stringify(requestData),
+    headers: {
+    'Content-Type': 'application/json',
+  },
+  })
+    .then((response) => {
+      if (response.status === 200) {
+        return response.json(); 
+      } else {
+        throw new Error('Failed to leave channel');
+      }
+    })
+    .then((data) => {
+      this.channels = data;
+    })
+    .catch((err) => {
+      console.error(err);
+    })
+    },
 
     toggleLeftDrawer () {
       this.leftDrawerOpen = !this.leftDrawerOpen
     },
 
-    openExitModal(channelName: string) {
-      this.channelToLeaveName = channelName;
+    openExitModal(id: number) {
+      this.channelToLeaveId = id;
       this.exitModalOpen = true;
     },
 
@@ -212,13 +239,16 @@ export default defineComponent({
     },
 
     leaveChannel() {
-      const index = this.channels.findIndex((channel) => channel.name === this.channelToLeaveName);
+      //const index = this.channels.findIndex((channel) => channel.id=== this.id);
 
-      if (index !== -1) {
+      //const filteredChannels = this.channels.filter((channel) => channel.id === this.channelToLeaveId);
+
+
+     /*  if (index !== -1) {
         this.channels.splice(index, 1);
         this.closeExitModal();
         this.channelToLeaveName = '';
-      }
+      } */
     },
 
     openCreateChannelModal() {
@@ -259,9 +289,17 @@ export default defineComponent({
     navigateToProfile() {
       //
     },
-    logout() {
+    async logout() {
       if(this.showProfileDropdown){
-        this.$router.push({ name: 'loginPage' });
+        console.log(await supabase.auth.session())
+        const {error} = await supabase.auth.signOut();
+        console.log(await supabase.auth.session())
+        if(error){
+          console.log(error)
+        }
+        else{
+          this.$router.push({ name: 'loginPage' });
+        }
       }
     },
     navigateToChannel(channelId: number){

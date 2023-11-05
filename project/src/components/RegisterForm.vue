@@ -34,65 +34,93 @@
 
 <script>
     import { useQuasar } from 'quasar'
+    import { ref } from 'vue';
+
+    import { supabase } from 'app/config/supabase';
+
 
     export default {
         setup () {
             const $q = useQuasar()
+            const email = ref("");
+            const password = ref("");
+            const name = ref("");
+            const surname = ref("");
+            const username = ref("");
+            const passwordRepeated = ref("");
 
-            return {
-                showNotif (errorMessage) {
-                    $q.notify({
-                        timeout: 1500,
-                        message: errorMessage, 
-                        color: 'negative',
-                        multiLine: true,
-                        type: 'negative',
-                        actions: [
-                            { label: 'understand', color: 'yellow', handler: () => { /* ... */ } }
-                        ]
-                    })
-                }
-            }
-        },
-
-        data() {
-            return {
-                name: '',
-                surname: '',
-                email: '',
-                username: '',
-                password: '',
-                passwordRepeated: '',
-                isPwd: true, 
-            };
-        },
-        methods: {
-            register() {
-                const message = this.validation()
+            async function testos(){
+                const message = validation()
                 if(message !== true) {
                     this.showNotif(message)
                     return;
                 }
 
-                this.$router.push({ name: 'homePage' });
-            },
+                const response = await fetch('http://localhost:3333/users', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'username': username.value,
+                        'email': email.value,
+                    },
+                    });
 
-            togglePasswordVisibility() {
-                this.isPwd = !this.isPwd;
-            },
+                    if (response.status === 200) {
+                    const user = await response.json(); 
+                    this.showNotif("User already exists")
+                    return;
+                }
 
-            goToLogin() {
-                this.$router.push({ name: 'loginPage' });
-            },
+                const data = await supabase.auth.signUp({
+                    email: email.value,
+                    password: password.value
+                    });
 
-            validation() {
+                const reqBody = {
+                    id: data.user.id,
+                    email: email.value,
+                    nickname: username.value,
+                    firstname: name.value,
+                    lastname: surname.value,
+                }
+
+                fetch('http://localhost:3333/users', {
+                    method: 'POST',
+                    body: JSON.stringify(reqBody),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    })
+                    .then((response) => {
+                        if (response.status === 201) {
+                        return response.json(); 
+                        } else if (response.status === 400) {
+                        throw new Error('Bad request: Invalid data');
+                        } else {
+                        throw new Error('Server Error: Something went wrong');
+                        }
+                    })
+                    .then((data) => {
+                        console.log('Data:', data);
+                if (error) {
+                    console.error('Error signing up:', error);
+                } else {
+                    console.log('User registration successful.');
+                }
+                    })
+                    .catch((error) => {
+                        console.log("")
+                    }); 
+
+            }
+
+            function validation() {
                 const fields = [
-                    { name: this.name, label: 'Name', maxLength: 20 },
-                    { name: this.surname, label: 'Surname', maxLength: 20 },
-                    { name: this.email, label: 'Email', pattern: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/ },
-                    { name: this.username, label: 'Username', maxLength: 15 },
-                    { name: this.password, label: 'Password' },
-                    { name: this.passwordRepeated, label: 'Repeated Password' }
+                    { name: name.value, label: 'Name', maxLength: 20 },
+                    { name: surname.value, label: 'Surname', maxLength: 20 },
+                    { name: email.value, label: 'Email', pattern: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/ },
+                    { name: username.value, label: 'Username', maxLength: 15 },
+                    { name: password.value, minLength: 6, label: 'Password' },
+                    { name: passwordRepeated.value, minLength: 6, label: 'Repeated Password' }
                 ];
 
                 for (const field of fields) {
@@ -107,14 +135,66 @@
                     }
                 }
 
-                if (this.password !== this.passwordRepeated) {
+                if (password.value !== passwordRepeated.value) {
                     return "Passwords do not match";
                 }
 
                 return true;
+            }
+            
+            return {
+                showNotif (errorMessage) {
+                    $q.notify({
+                        timeout: 1500,
+                        message: errorMessage, 
+                        color: 'negative',
+                        multiLine: true,
+                        type: 'negative',
+                        actions: [
+                            { label: 'understand', color: 'yellow', handler: () => { /* ... */ } }
+                        ]
+                    })
+                },
+                email,
+                password,
+                name,
+                surname,
+                username,
+                passwordRepeated,
+                testos,
+                validation
+            }
+        },
+
+        data() {
+            return {
+                isPwd: true, 
+            };
+        },
+        methods: {
+            async register() {
+                //const message = this.validation()
+                /* if(message !== true) {
+                    this.showNotif(message)
+                    return;
+                }
+                 */
+                this.testos()
+                //this.$router.push({ name: 'homePage' });
             },
+
+            togglePasswordVisibility() {
+                this.isPwd = !this.isPwd;
+            },
+
+            goToLogin() {
+                this.$router.push({ name: 'loginPage' });
+            },
+
         }
     }
+
+    
 </script>
 
 <style>    
@@ -133,3 +213,7 @@
         justify-content: center;
     }
 </style>
+
+
+
+

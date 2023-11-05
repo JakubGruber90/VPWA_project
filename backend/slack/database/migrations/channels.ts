@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.increments('id').primary()
       table.string('name', 20).notNullable()
       table.enu('type', ['public', 'private']).notNullable()
-      table.integer('owner').references('users.id').onDelete('CASCADE')
+      table.uuid('owner').references('users.id').onDelete('CASCADE')
       table.timestamps(true, true)
     })
   }

@@ -2,7 +2,7 @@
     <q-page>
         <div class="input-group">
         <q-input 
-            v-model="username" 
+            v-model="email" 
             label="Username"  
             style="width: 200px; 
             height: 50px;"/>
@@ -30,18 +30,44 @@
 </template>
   
 <script>
+    import { supabase } from 'app/config/supabase';
+    import { useRouter } from 'vue-router';
+    import { ref } from 'vue';
+
     export default {
+        setup(){
+        const router = useRouter()
+        const email = ref("");
+        const password = ref("");
+        
+
+        async function login() {
+                const {user, error} = await supabase.auth.signIn({
+                    email: email.value,
+                    password: password.value
+                })
+
+                if(error){
+                    alert(error.message)
+                }
+                else{
+                   // console.log(await supabase.auth.session())
+                   router.push({ name: 'homePage' });
+                }
+            }
+
+        return {
+            email,
+            password,
+            login
+        }
+    },
         data() {
             return {
-                username: '',
-                password: '',
                 isPwd: true, 
             };
         },
         methods: {
-            login() {
-                this.$router.push({ name: 'homePage' });
-            },
 
             togglePasswordVisibility() {
                 this.isPwd = !this.isPwd;

@@ -5,8 +5,8 @@ const routes: RouteRecordRaw[] = [
     path: '/channels',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '/channels', name: 'homePage', component: () => import('pages/IndexPage.vue') },
-      { path: '/:id', name: 'channelPage', component: () => import('pages/IndexPage.vue') }
+      { path: '/channels', name: 'homePage', component: () => import('pages/IndexPage.vue'), meta: {requiresAuth: true} },
+      { path: '/channels/:id', name: 'channelPage', component: () => import('pages/IndexPage.vue'),  meta: { requiresMembership: true }, }
     ],
   },
 
@@ -29,5 +29,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('pages/ErrorNotFound.vue'),
   },
 ];
+
 
 export default routes;

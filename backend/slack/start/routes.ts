@@ -24,3 +24,11 @@ Route.get('/', 'HomeController.index');
 
 Route.post('/message', 'MessagesController.handle_input');
 
+Route.post('/login', 'UsersController.login');
+
+Route.get('/channels/:id', 'ChannelsController.index');
+Route.delete('/channels/:id', 'ChannelsController.leaveChannel');
+
+Route.get('/users', 'UsersController.findOne');
+Route.post('/users', 'UsersController.create');
+
