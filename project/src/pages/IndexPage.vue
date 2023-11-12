@@ -54,12 +54,18 @@
 
 <script lang="ts">
 import { Component, defineComponent } from 'vue';
+import { supabase } from 'app/config/supabase';
 import UsersTyping from '../components/UsersTyping.vue'
 import { QInfiniteScroll } from 'quasar';
 
 export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
+
+  props: {
+    socket: Object,
+  },
+
   data () {
     return {
       messageText: '',
@@ -81,14 +87,15 @@ export default defineComponent({
 
   methods: {
     sendMessage (event: any) {
-      var newMessageText = this.messageText;
+      let newMessageText = this.messageText;
 
+      /* 
       if (newMessageText.trim() === '' || event.shiftKey) {
         return;
       }
 
       
-      this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"});
+      this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"}); */
       
       const messageData = {
       name: "Lisa",
@@ -97,8 +104,12 @@ export default defineComponent({
       stamp: "now",
     };
 
-    // Send a POST request to the server
-    fetch('http://localhost:3333/message', {
+
+    const channel_id = this.$route.params.id;
+    
+    this.socket?.emit('message', {channel_id: channel_id, message: this.messageText })
+
+   /*  fetch('http://localhost:3333/message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -117,7 +128,7 @@ export default defineComponent({
       })
       .catch((error) => {
         console.error('Error:', error);
-      });
+      }); */
 
     this.messageText = '';
     },

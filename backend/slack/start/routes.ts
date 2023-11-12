@@ -20,15 +20,18 @@
 
 import Route from '@ioc:Adonis/Core/Route'
 
-Route.get('/', 'HomeController.index');
 
-Route.post('/message', 'MessagesController.handle_input');
+Route.group(() => {
+    Route.get('/channels', 'ChannelsController.getChannels');
+    Route.post('/channels', 'ChannelsController.createChannel');
+    Route.post('/message', 'MessagesController.handle_input');
+    Route.get('/channels/:id', 'ChannelsController.index');
+    Route.delete('/channels/:id', 'ChannelsController.leaveChannel');
+  }).middleware(['auth'])
+
 
 Route.post('/login', 'UsersController.login');
-
-Route.get('/channels/:id', 'ChannelsController.index');
-Route.delete('/channels/:id', 'ChannelsController.leaveChannel');
-
 Route.get('/users', 'UsersController.findOne');
 Route.post('/users', 'UsersController.create');
+
 

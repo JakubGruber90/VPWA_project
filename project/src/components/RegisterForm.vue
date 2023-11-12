@@ -49,12 +49,7 @@
             const username = ref("");
             const passwordRepeated = ref("");
 
-            async function testos(){
-                const message = validation()
-                if(message !== true) {
-                    this.showNotif(message)
-                    return;
-                }
+            async function registerUser(){
 
                 const response = await fetch('http://localhost:3333/users', {
                     headers: {
@@ -64,7 +59,7 @@
                     },
                     });
 
-                    if (response.status === 200) {
+                    if (response.status === 400) {
                     const user = await response.json(); 
                     this.showNotif("User already exists")
                     return;
@@ -72,8 +67,17 @@
 
                 const data = await supabase.auth.signUp({
                     email: email.value,
-                    password: password.value
-                    });
+                    password: password.value,
+                    },
+                    {
+                        data: {
+                            nickname: username.value,
+
+                        }
+                    }
+                );
+
+                console.log(data)
 
                 const reqBody = {
                     id: data.user.id,
@@ -101,16 +105,11 @@
                     })
                     .then((data) => {
                         console.log('Data:', data);
-                if (error) {
-                    console.error('Error signing up:', error);
-                } else {
-                    console.log('User registration successful.');
-                }
+                        window.location.reload();
                     })
                     .catch((error) => {
-                        console.log("")
+                        console.log(error)
                     }); 
-
             }
 
             function validation() {
@@ -161,7 +160,7 @@
                 surname,
                 username,
                 passwordRepeated,
-                testos,
+                registerUser,
                 validation
             }
         },
@@ -173,14 +172,14 @@
         },
         methods: {
             async register() {
-                //const message = this.validation()
-                /* if(message !== true) {
+                const message = this.validation()
+                 if(message !== true) {
                     this.showNotif(message)
                     return;
                 }
-                 */
-                this.testos()
-                //this.$router.push({ name: 'homePage' });
+                 
+                this.registerUser()
+
             },
 
             togglePasswordVisibility() {

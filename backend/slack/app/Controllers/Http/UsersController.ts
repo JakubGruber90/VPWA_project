@@ -7,12 +7,11 @@ class UserController {
     const userData = request.all();
 
       const user = new User();
-      user.fill(userData); // Fill the user model with the provided data
+      user.fill(userData); 
 
-      // Save the user to the database
       await user.save();
+      
       const userR = await User.findBy('email', userData.email);
-      // Return a success response
       return response.status(201).json({
        user: userR, 
       });
@@ -28,9 +27,9 @@ class UserController {
         .first();
 
         if (user) {
-          response.status(200).json({message: "User exists"})
+          response.status(400).json({message: "User exists"})
         } else {
-          return response.status(404).json({ message: 'User not found' });
+          return response.status(200).json({ message: 'ok' });
         }
       }
   

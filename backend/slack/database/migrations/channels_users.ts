@@ -6,8 +6,8 @@ export default class extends BaseSchema {
   public async up () {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id').primary()
-      table.integer('user').references('users.id').onDelete('CASCADE')
-      table.integer('channel').references('channels.id').onDelete('CASCADE')
+      table.integer('user').references('users.id').notNullable().onDelete('CASCADE')
+      table.integer('channel').references('channels.id').notNullable().onDelete('CASCADE')
       table.integer('kick_votes')
       table.timestamps(true, true)
     })

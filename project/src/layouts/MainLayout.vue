@@ -13,7 +13,7 @@
         <q-badge rounded color="red" label="3" class="badge-absolute-main"/>
       </div>
 
-        <q-toolbar-title>
+        <q-toolbar-title >
           #Channel Name
         </q-toolbar-title>
         <div class="" style="position: relative;">
@@ -86,7 +86,7 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view :socket="socket"/>
     </q-page-container>
 
     <q-dialog v-model="exitModalOpen" persistent ref="leaveChannelModal">
@@ -130,12 +130,49 @@
 import { defineComponent } from 'vue';
 import { useQuasar } from 'quasar'
 import { supabase } from 'app/config/supabase';
+import axios from "axios";
+import {initializeSocket, getSocket} from '../services/wsService';
+
 
 export default defineComponent({
   name: 'MainLayout',
-
   components: {
+  },
+  mounted() {
+
+     const user_id = supabase.auth.session().user.id
+     const user_name = supabase.auth.session().user.user_metadata.nickname
+
+    initializeSocket(user_id, user_name);
+
+    this.socket = getSocket();
     
+    this.socket.on('connect', () => {
+      console.log('Connected to WebSocket server');
+    });
+    
+    this.socket.on('create-channel', (channel) => {
+      this.channels = [channel, ...this.channels];
+    });
+
+    this.socket.on('join-channel', (channel) => {
+      this.channels = [channel, ...this.channels];
+    });
+
+    this.socket.on('leave-channel', (channel_id) => {
+      this.channels = this.channels.filter((channel:any) => channel_id != channel.id);
+      this.closeExitModal();
+      this.$router.push({ path: '/channels' });
+    });
+
+
+    this.socket.on('message', (data) => {
+      console.log('Received a message:', data);
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket server');
+    });
   },
 
   setup () {
@@ -172,6 +209,7 @@ export default defineComponent({
       showStateDropdown: false,
       status: "online",
       channelToLeaveId: -1,
+      socket: Object
     }
   },
 
@@ -183,46 +221,38 @@ export default defineComponent({
       return this.channels.filter((channel:any) => channel.type == "private");
     },
   },
-  mounted() {
+  created() {
     this.fetchData(); 
   },
   methods: {
+
+  /*   invite(){
+      const channel_id = this.$route.params.id;
+      this.socket.emit('join', {channel_id: channel_id, nickname: "abeca" }, (response : any) => {
+        alert("Invitation sent")
+      }); 
+
+    }*/
+
     fetchData() {
-      fetch('http://localhost:3333')
-        .then((response) => {
-          response.json().then((data) => {
-            this.channels = data;
-          });
-        })
-        .catch((err) => {
-          console.error(err);
-        });
+      const auth_token = supabase.auth.session()?.access_token
+      
+      axios.get('http://localhost:3333/channels', { 
+        headers: { Authorization: `Bearer ${auth_token}`,}})
+      .then((response) => {
+        console.log(response.data.channels)
+        this.channels = response.data.channels;
+      })
+      .catch((error) => {
+        console.error(error);
+      });
     },
+
     leaveRequest() {
 
-      const requestData  = {
-      id: 1
-    };
-  fetch('http://localhost:3333/channels/:id', {
-    method: 'DELETE',
-    body: JSON.stringify(requestData),
-    headers: {
-    'Content-Type': 'application/json',
-  },
-  })
-    .then((response) => {
-      if (response.status === 200) {
-        return response.json(); 
-      } else {
-        throw new Error('Failed to leave channel');
-      }
-    })
-    .then((data) => {
-      this.channels = data;
-    })
-    .catch((err) => {
-      console.error(err);
-    })
+      const channel_id = this.$route.params.id
+      this.socket.emit('leave', {channel_id: channel_id});
+
     },
 
     toggleLeftDrawer () {
@@ -266,9 +296,19 @@ export default defineComponent({
         return;
       }
 
-      const newChannelInstance = { ...this.newChannel };
+      this.socket.emit('create', {name: this.newChannel.name, isPrivate: this.newChannel.isPrivate})
 
-      this.channels.push(newChannelInstance);
+      /* const newChannelInstance = { ...this.newChannel };
+      const auth_token = supabase.auth.session()?.access_token  
+      
+
+           this.channels.push(newChannelInstance) 
+      const customHeaders = {'Authorization': auth_token}
+
+     /*  axios.post('http://localhost:3333/channels', newChannelInstance,{headers: customHeaders}).then(response => {
+        this.channels.push(response.data.newChannel)  
+      })
+      .catch(error => {console.log(error)}); */
 
       this.newChannel.name = '';
       this.newChannel.isPrivate = false;
@@ -291,9 +331,7 @@ export default defineComponent({
     },
     async logout() {
       if(this.showProfileDropdown){
-        console.log(await supabase.auth.session())
         const {error} = await supabase.auth.signOut();
-        console.log(await supabase.auth.session())
         if(error){
           console.log(error)
         }
