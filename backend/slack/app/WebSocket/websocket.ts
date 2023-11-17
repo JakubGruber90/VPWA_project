@@ -1,9 +1,10 @@
 import Ws from './Ws'
 
-import { joinChannel, leaveChannel } from 'App/services/ChannelServices';
+import { joinChannel, leaveChannel, getUserList } from 'App/services/ChannelServices';
 import { decodeToken} from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
+import ChannelsUser from 'App/Models/ChannelsUser';
 
 Ws.boot()
 
@@ -85,21 +86,54 @@ Ws.io.on('connection', async (socket) => {
   socket.on('message', async ({channel_id, message}) => {
     channel_id = parseInt(channel_id)
     const user_id = socket.handshake.query.user_id
+    
     if(message == "/cancel"){
       leaveChannel(channel_id, user_id, channels, socket)
     }
-    if(message.startsWith("/invite ")){
+/*
+    if(message.startsWith("/invite ")) {
       const wordsArray = message.split(' ');
 
       if (wordsArray.length >= 2) {
         const nickname = wordsArray[1];
-        const channelSockets = channels.get(channel_id)
 
         const user = await User.query().where('nickname', nickname).first();
         if(!user){
-          return 
+          socket.emit('invite', "User does not exist"); 
+          return
         }
-    
+
+        const channel = await Channel.query().where('id', channel_id).first();
+        const isPrivate = channel?.type === "private" ? "private" : "public"
+        const owner = channel?.owner as string
+        const newUserId = user.id as number
+        
+        if(isPrivate == "private") {
+
+          if (owner === user_id) {
+            
+            const invitedUserSocket = users.get(nickname);
+            
+            if (invitedUserSocket) {
+              invitedUserSocket.emit('invite', channel);
+
+              const newData = new ChannelsUser();
+              newData.fill({
+                channel: channel_id,
+                user: newUserId,
+              });
+      
+              await newData.save();
+            }
+
+          } else {
+            socket.emit('invite', "You dont have permission to invite to this channel"); 
+            return
+          }
+        } else {
+          
+        }
+        /*
         const channel = await joinChannel(user.id,channel_id)
     
         const invitedUserSocket = users.get(nickname);
@@ -108,10 +142,62 @@ Ws.io.on('connection', async (socket) => {
         if (invitedUserSocket) {
           invitedUserSocket.emit('join-channel',  channel);
         } 
+        */
+       /*
       }
     }
-  })
-})
+*/
+    if(message.startsWith("/join ")) {
+      const wordsArray = message.split(' ');
+      const isPrivate = wordsArray[2] === "private" ? "private" : "public"
+      const channelName = wordsArray[1];
+      const userdb = user_id as string
+      
+      let channel = await Channel.query().where('name', channelName).first();
+      let channeldb = channel?.id as number
+      
+      if (channeldb !== undefined) {
+        let isMember = await ChannelsUser.query().where('user', userdb).andWhere('channel', channeldb).first();
+
+        if(isMember){
+          socket.emit('join-channel',  "You are already member of this channel");
+          return
+        }  
+      }  
+      
+      if(channel && channel.type == "private") {
+        socket.emit('join-channel',  "You dont have permission to join this channel");
+      } else if (channel) {
+        //save ti channeluserdb
+        await channel.related('users').attach([userdb]);
+        socket.emit('join-channel',  channel);
+      } else {
+        const newChannel = new Channel();
+        newChannel.fill({
+          name: wordsArray[1],
+          type: isPrivate,
+          owner: userdb
+        });
+
+        await newChannel.save(); 
+        await newChannel.related('users').attach([userdb]);
+
+
+        channels.set(newChannel.id, new Set());
+        const channelSockets = channels.get(newChannel.id)
+        channelSockets.add(socket)
+
+        console.log(channelSockets)
+
+        socket.emit("join-channel", newChannel)
+      }
+    }
+
+    if (message.startsWith("/list")) {
+      getUserList(channel_id, socket);
+    }
+}
+)})
 
 
 

@@ -127,7 +127,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, provide } from 'vue';
 import { useQuasar } from 'quasar'
 import { supabase } from 'app/config/supabase';
 import axios from "axios";
@@ -137,11 +137,13 @@ import {initializeSocket, getSocket} from '../services/wsService';
 export default defineComponent({
   name: 'MainLayout',
   components: {
+  
   },
+
   mounted() {
 
-     const user_id = supabase.auth.session().user.id
-     const user_name = supabase.auth.session().user.user_metadata.nickname
+    const user_id = supabase.auth.session().user.id
+    const user_name = supabase.auth.session().user.user_metadata.nickname
 
     initializeSocket(user_id, user_name);
 

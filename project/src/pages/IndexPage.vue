@@ -33,6 +33,26 @@
       <div><UsersTyping/><q-spinner-dots color="gray" size="17px"/></div>
     </q-infinite-scroll>
     
+    <q-dialog v-model="showUserListModal" persistent>
+      <q-card>
+        <q-card-section>
+          <q-card-title>User list</q-card-title>
+        </q-card-section>
+
+        <q-card-section>
+          <q-list bordered separator>
+            <q-item v-for="(user, index) in userData" :key="index">
+              <q-item-section>{{user}}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat color="primary" label="Close" v-on:click="closeUserListModal"/>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    
     <q-footer>
       <q-form v-on:submit="sendMessage" class="full-width input">
         <q-input 
@@ -53,21 +73,27 @@
 </template>
 
 <script lang="ts">
-import { Component, defineComponent } from 'vue';
+import { Component, defineComponent, inject } from 'vue';
 import { supabase } from 'app/config/supabase';
 import UsersTyping from '../components/UsersTyping.vue'
 import { QInfiniteScroll } from 'quasar';
+import {initializeSocket, getSocket} from '../services/wsService';
+import { Socket } from 'socket.io-client';
+import { data } from 'autoprefixer';
 
 export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
 
   props: {
-    socket: Object,
+    
   },
 
   data () {
     return {
+      socket: Object,
+      showUserListModal: false,
+      userData: [],
       messageText: '',
       isLoading: false,
       messageList: [
@@ -85,9 +111,45 @@ export default defineComponent({
     }
   },
 
+  //toto mozno opravit lebo zas inicializujem socket
+  mounted() {
+    const user_id = supabase.auth.session().user.id
+    const user_name = supabase.auth.session().user.user_metadata.nickname
+
+    initializeSocket(user_id, user_name);
+
+    this.socket = getSocket();
+  
+    this.socket.on('join-channel', (data: any) => {
+      if (typeof data === 'string') {
+        alert(data);
+      } else {
+        this.$router.push({ name: 'channelPage', params: { id: data.id } });
+      }
+    });
+
+    this.socket.on('user-list', (data: any) => {
+      console.log(data)
+
+      if(data.length > 0) {
+        this.userData = data.flatMap(innerArray => innerArray.map(obj => obj.nickname));
+        this.showUserListModal = true;
+      }
+    });
+
+    this.socket.on('invite', (data: any) => {
+      console.log(data)
+    })
+  },
+
   methods: {
+    closeUserListModal() {
+      this.showUserListModal = false;
+    },
+
     sendMessage (event: any) {
       let newMessageText = this.messageText;
+      console.log(newMessageText)
 
       /* 
       if (newMessageText.trim() === '' || event.shiftKey) {
@@ -107,7 +169,7 @@ export default defineComponent({
 
     const channel_id = this.$route.params.id;
     
-    this.socket?.emit('message', {channel_id: channel_id, message: this.messageText })
+    this.socket?.emit('message', {channel_id: channel_id, message: this.messageText})
 
    /*  fetch('http://localhost:3333/message', {
       method: 'POST',
@@ -134,10 +196,10 @@ export default defineComponent({
     },
 
     addNewline(event: any) {
-    if (event.key === 'Enter' && event.shiftKey) {
-      this.messageText += '\n';
-    }
-  },
+      if (event.key === 'Enter' && event.shiftKey) {
+        this.messageText += '\n';
+      }
+    },
 
     onLoad (index: any, done: any) { 
       setTimeout(() => {
