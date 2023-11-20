@@ -93,16 +93,16 @@ Ws.io.on('connection', async (socket) => {
     if(message.startsWith("/invite ")) {
       const wordsArray = message.split(' ');
       const nickname = wordsArray[1];
-      const user = user_id as string
       const channel = await Channel.query().where('id', channel_id).first();
       const userToInvite = await User.query().where('nickname', nickname).first();
-      const userToInviteString = userToInvite?.id as string
-      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToInviteString).first();
 
       if (!userToInvite) {
         socket.emit('invite', 'User does not exist');
         return
       }
+
+      const userToInviteString = userToInvite?.id as string
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToInviteString).first();
 
       if (channelUser) {
         socket.emit('invite', 'User is already member of this channel');
