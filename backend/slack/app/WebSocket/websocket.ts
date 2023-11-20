@@ -91,9 +91,76 @@ Ws.io.on('connection', async (socket) => {
     if(message == "/cancel"){
       leaveChannel(channel_id, user_id, channels, socket)
     }
-/*
+
     if(message.startsWith("/invite ")) {
       const wordsArray = message.split(' ');
+      const nickname = wordsArray[1];
+      const user = user_id as string
+      const channel = await Channel.query().where('id', channel_id).first();
+      const userToInvite = await User.query().where('nickname', nickname).first();
+      const userToInviteString = userToInvite?.id as string
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToInviteString).first();
+
+      if (!userToInvite) {
+        socket.emit('invite', 'User does not exist');
+        return
+      }
+
+      if (channelUser) {
+        socket.emit('invite', 'User is already member of this channel');
+        return
+      }
+
+      if (channel) {
+        if (channel.type === "private") {
+          const owner = channel.owner as string
+          if (owner !== user_id) {
+            socket.emit('invite', 'You do not have permission to invite to this channel');
+            return
+          } else {
+            const userSocket = users.get(nickname);
+            
+            if (userSocket) {
+              userSocket.emit('invite', channel_id);
+            }
+  
+            const newChannel = new ChannelsUser();
+            newChannel.fill({
+              channelId: channel_id,
+              userId: userToInvite.id as unknown as number,
+              kickVotes: 0,
+            });
+    
+            await newChannel.save();
+          }
+          return
+        } else {
+          const userSocket = users.get(nickname);
+            
+          if (userSocket) {
+            userSocket.emit('invite', channel_id);
+          }
+
+          const newChannel = new ChannelsUser();
+          newChannel.fill({
+            channelId: channel_id,
+            userId: userToInvite.id as unknown as number,
+            kickVotes: 0,
+          });
+  
+          await newChannel.save();
+      }
+        /*
+      }
+      if(channel) {
+        const userSocket = users.get(nickname);
+        if (userSocket) {
+          userSocket.emit('invite', channel_id);
+        }
+        await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToInviteString).delete();
+      } else {
+        socket.emit('invite', 'You do not have permission to invite to this channel');
+      }
 
       if (wordsArray.length >= 2) {
         const nickname = wordsArray[1];
@@ -103,7 +170,7 @@ Ws.io.on('connection', async (socket) => {
           socket.emit('invite', "User does not exist"); 
           return
         }
-
+/*
         const channel = await Channel.query().where('id', channel_id).first();
         const isPrivate = channel?.type === "private" ? "private" : "public"
         const owner = channel?.owner as string
@@ -144,10 +211,10 @@ Ws.io.on('connection', async (socket) => {
           invitedUserSocket.emit('join-channel',  channel);
         } 
         */
-       /*
+       
       }
     }
-*/
+
     if(message.startsWith("/join ")) {
       const wordsArray = message.split(' ');
       const isPrivate = wordsArray[2] === "private" ? "private" : "public"

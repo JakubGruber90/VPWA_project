@@ -189,6 +189,15 @@ export default defineComponent({
     this.socket.on('disconnect', () => {
       console.log('Disconnected from WebSocket server');
     });
+
+    
+    this.socket.on('invite', (data) => {
+      if (typeof data === 'string') {
+        alert(data);
+      } else {
+        this.channels = [data, ...this.channels];
+      }
+    });
   },
 
   setup () {
