@@ -5,6 +5,7 @@ import { decodeToken} from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
 import ChannelsUser from 'App/Models/ChannelsUser';
+import Database from '@ioc:Adonis/Lucid/Database';
 
 Ws.boot()
 
@@ -168,7 +169,6 @@ Ws.io.on('connection', async (socket) => {
       if(channel && channel.type == "private") {
         socket.emit('join-channel',  "You dont have permission to join this channel");
       } else if (channel) {
-        //save ti channeluserdb
         await channel.related('users').attach([userdb]);
         socket.emit('join-channel',  channel);
       } else {
@@ -187,14 +187,45 @@ Ws.io.on('connection', async (socket) => {
         const channelSockets = channels.get(newChannel.id)
         channelSockets.add(socket)
 
-        console.log(channelSockets)
-
         socket.emit("join-channel", newChannel)
       }
     }
 
     if (message.startsWith("/list")) {
       getUserList(channel_id, socket);
+    }
+
+    if (message.startsWith("/quit")) {
+      const user = user_id as string
+      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+
+      if(channel) {
+        let usernames: any = [];
+
+        const usersIds = await Database.rawQuery('select user from channels_users where channel = ?', [channel_id])
+      
+        await Promise.all(usersIds.map(async (userid) => {
+          const name = await Database.rawQuery('select nickname from users where id = ?', [userid.user])
+          console.log(name[0]?.nickname)
+          usernames.push(name[0]?.nickname)
+        }));
+
+        await Channel.query().where('id', channel_id).delete();
+        await ChannelsUser.query().where('channel', channel_id).delete();
+
+        console.log(usernames)
+
+        for (const name of usernames) {
+          const userSocket = users.get(name);
+          if (userSocket) {
+            console.log('User is already attached to the channel');
+            userSocket.emit('leave-channel', channel_id);
+          }
+        }
+
+      } else {
+        socket.emit('leave-channel', 'You do not have permission to delete this channel');
+      }
     }
 }
 )})

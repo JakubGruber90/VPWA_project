@@ -161,12 +161,15 @@ export default defineComponent({
       this.channels = [channel, ...this.channels];
     });
 
-    this.socket.on('leave-channel', (channel_id) => {
-      this.channels = this.channels.filter((channel:any) => channel_id != channel.id);
-      this.closeExitModal();
-      this.$router.push({ path: '/channels' });
+    this.socket.on('leave-channel', (data) => {
+      if (typeof data === 'string') {
+        alert(data);
+      } else {
+        this.channels = this.channels.filter((channel:any) => data != channel.id);
+        this.closeExitModal();
+        this.$router.push({ path: '/channels' });
+      }
     });
-
 
     this.socket.on('message', (data) => {
       console.log('Received a message:', data);
