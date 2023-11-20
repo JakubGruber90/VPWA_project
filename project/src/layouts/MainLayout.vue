@@ -132,6 +132,7 @@ import { useQuasar } from 'quasar'
 import { supabase } from 'app/config/supabase';
 import axios from "axios";
 import {initializeSocket, getSocket} from '../services/wsService';
+import { data } from 'autoprefixer';
 
 
 export default defineComponent({
@@ -170,6 +171,16 @@ export default defineComponent({
         this.$router.push({ path: '/channels' });
       }
     });
+
+    this.socket.on('revoke', (data) => {
+      if (typeof data === 'string') {
+        alert(data);
+      } else {
+        this.channels = this.channels.filter((channel:any) => data != channel.id);
+        this.closeExitModal();
+        this.$router.push({ path: '/channels' });
+      }
+    })
 
     this.socket.on('message', (data) => {
       console.log('Received a message:', data);

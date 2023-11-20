@@ -218,13 +218,41 @@ Ws.io.on('connection', async (socket) => {
         for (const name of usernames) {
           const userSocket = users.get(name);
           if (userSocket) {
-            console.log('User is already attached to the channel');
             userSocket.emit('leave-channel', channel_id);
           }
         }
-
       } else {
         socket.emit('leave-channel', 'You do not have permission to delete this channel');
+      }
+    }
+
+    if (message.startsWith("/revoke ")) {
+      const wordsArray = message.split(' ');
+      const nickname = wordsArray[1];
+      const user = user_id as string
+      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+      const userToRemove = await User.query().where('nickname', nickname).first();
+      const userToRemoveString = userToRemove?.id as string
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).first();
+
+      if (!userToRemove) {
+        socket.emit('revoke', 'User does not exist');
+        return
+      }
+
+      if (!channelUser) {
+        socket.emit('revoke', 'User is not member of this channel');
+        return
+      }
+
+      if(channel) {
+        const userSocket = users.get(nickname);
+        if (userSocket) {
+          userSocket.emit('revoke', channel_id);
+        }
+        await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).delete();
+      } else {
+        socket.emit('revoke', 'You do not have permission to remove this user');
       }
     }
 }
