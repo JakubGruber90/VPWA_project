@@ -136,10 +136,6 @@ export default defineComponent({
         this.showUserListModal = true;
       }
     });
-
-    this.socket.on('invite', (data: any) => {
-      console.log(data)
-    })
   },
 
   methods: {

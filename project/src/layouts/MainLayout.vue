@@ -190,8 +190,8 @@ export default defineComponent({
       console.log('Disconnected from WebSocket server');
     });
 
-    
     this.socket.on('invite', (data) => {
+      console.log(data)
       if (typeof data === 'string') {
         alert(data);
       } else {

@@ -18,8 +18,6 @@ Ws.io.on('connection', async (socket) => {
 
 
   socket.on('create', async ({name, isPrivate}) => {
-
-
     const user_id = socket.handshake.query.user_id as string
 
     const channel = await Channel.query().where('name', name).first();
@@ -121,7 +119,7 @@ Ws.io.on('connection', async (socket) => {
             const userSocket = users.get(nickname);
             
             if (userSocket) {
-              userSocket.emit('invite', channel_id);
+              userSocket.emit('invite', channel);
             }
   
             const newChannel = new ChannelsUser();
@@ -138,7 +136,7 @@ Ws.io.on('connection', async (socket) => {
           const userSocket = users.get(nickname);
             
           if (userSocket) {
-            userSocket.emit('invite', channel_id);
+            userSocket.emit('invite', channel);
           }
 
           const newChannel = new ChannelsUser();
@@ -149,69 +147,7 @@ Ws.io.on('connection', async (socket) => {
           });
   
           await newChannel.save();
-      }
-        /*
-      }
-      if(channel) {
-        const userSocket = users.get(nickname);
-        if (userSocket) {
-          userSocket.emit('invite', channel_id);
-        }
-        await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToInviteString).delete();
-      } else {
-        socket.emit('invite', 'You do not have permission to invite to this channel');
-      }
-
-      if (wordsArray.length >= 2) {
-        const nickname = wordsArray[1];
-
-        const user = await User.query().where('nickname', nickname).first();
-        if(!user){
-          socket.emit('invite', "User does not exist"); 
-          return
-        }
-/*
-        const channel = await Channel.query().where('id', channel_id).first();
-        const isPrivate = channel?.type === "private" ? "private" : "public"
-        const owner = channel?.owner as string
-        const newUserId = user.id as number
-        
-        if(isPrivate == "private") {
-
-          if (owner === user_id) {
-            
-            const invitedUserSocket = users.get(nickname);
-            
-            if (invitedUserSocket) {
-              invitedUserSocket.emit('invite', channel);
-
-              const newData = new ChannelsUser();
-              newData.fill({
-                channel: channel_id,
-                user: newUserId,
-              });
-      
-              await newData.save();
-            }
-
-          } else {
-            socket.emit('invite', "You dont have permission to invite to this channel"); 
-            return
-          }
-        } else {
-          
-        }
-        /*
-        const channel = await joinChannel(user.id,channel_id)
-    
-        const invitedUserSocket = users.get(nickname);
-        channelSockets.add(invitedUserSocket);
-    
-        if (invitedUserSocket) {
-          invitedUserSocket.emit('join-channel',  channel);
-        } 
-        */
-       
+        }       
       }
     }
 
