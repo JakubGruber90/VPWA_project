@@ -3,7 +3,7 @@
         <div class="input-group">
         <q-input 
             v-model="email" 
-            label="Username"  
+            label="Email"  
             style="width: 200px; 
             height: 50px;"/>
         <q-input 

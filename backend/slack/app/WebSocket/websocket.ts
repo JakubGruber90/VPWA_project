@@ -1,10 +1,12 @@
 import Ws from './Ws'
 
 import { joinChannel, leaveChannel, getUserList } from 'App/services/ChannelServices';
+import { getChannelMessages, sendMessage } from 'App/services/MessageServices';
 import { decodeToken} from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
 import ChannelsUser from 'App/Models/ChannelsUser';
+import Message from 'App/Models/Message';
 
 Ws.boot()
 
@@ -45,8 +47,16 @@ Ws.io.on('connection', async (socket) => {
 
     socket.emit("create-channel", newChannel)
 
-    });
+  });
 
+  socket.on('get-messages', async (channel_id ) => {
+    try {
+      const messages = await getChannelMessages(channel_id);
+      socket.emit('channel-messages', messages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  });
 
 /*   socket.on('join', async ({channel_id, nickname}) => {
     channel_id = parseInt(channel_id)
@@ -89,8 +99,9 @@ Ws.io.on('connection', async (socket) => {
     
     if(message == "/cancel"){
       leaveChannel(channel_id, user_id, channels, socket)
+      return;
     }
-/*
+    /*
     if(message.startsWith("/invite ")) {
       const wordsArray = message.split(' ');
 
@@ -146,7 +157,7 @@ Ws.io.on('connection', async (socket) => {
        /*
       }
     }
-*/
+    */
     if(message.startsWith("/join ")) {
       const wordsArray = message.split(' ');
       const isPrivate = wordsArray[2] === "private" ? "private" : "public"
@@ -168,7 +179,7 @@ Ws.io.on('connection', async (socket) => {
       if(channel && channel.type == "private") {
         socket.emit('join-channel',  "You dont have permission to join this channel");
       } else if (channel) {
-        //save ti channeluserdb
+        //save to channeluserdb
         await channel.related('users').attach([userdb]);
         socket.emit('join-channel',  channel);
       } else {
@@ -191,18 +202,25 @@ Ws.io.on('connection', async (socket) => {
 
         socket.emit("join-channel", newChannel)
       }
+
+      return;
     }
 
     if (message.startsWith("/list")) {
       getUserList(channel_id, socket);
+      return;
+    }
+
+    const new_message = await sendMessage(channel_id, message, user_id);
+    //socket.emit('add-new-message', new_message);
+
+    const currChannelSockets = channels.get(channel_id)
+    for (var channelSocket in currChannelSockets) {
+      console.log(channelSocket);
+      channelSocket.emit('add-new-message', new_message);
     }
 }
 )})
-
-
-
-
-
 
 /*        fetch(`http://localhost:3333/channels/${channel_id}`, {
         method: 'DELETE',

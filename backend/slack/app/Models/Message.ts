@@ -16,7 +16,7 @@ export default class Message extends BaseModel {
   public sender: number
 
   @column()
-  public channelId: number // Rename this to avoid conflict
+  public channel: number // Rename this to avoid conflict
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public createdAt: DateTime
@@ -31,7 +31,7 @@ export default class Message extends BaseModel {
   public user: BelongsTo<typeof User>
 
   @belongsTo(() => Channel, {
-    localKey: 'channelId', // Update to match the renamed column
+    localKey: 'channel',
     foreignKey: 'id',
   })
   public channel: BelongsTo<typeof Channel>

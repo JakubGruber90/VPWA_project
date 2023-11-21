@@ -138,6 +138,10 @@
                     return "Passwords do not match";
                 }
 
+                if (password.value.length < 6) {
+                    return "Password should be at least 6 characters";
+                }
+
                 return true;
             }
             

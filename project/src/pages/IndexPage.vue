@@ -1,37 +1,36 @@
 <template>
   <q-page>
-    <q-infinite-scroll reverse @load="onLoad" :offset="0" class="scroll" ref="infScroll">
+   
+      <q-infinite-scroll reverse class="scroll" ref="infScroll">
 
         <template v-slot:loading>  
-        <div class="row justify-center q-my-md">
-          <q-spinner-dots color="primary" size="40px" />
-        </div>
-      </template>
-
-      <q-chat-message v-for="(message, index) in messageList" :key="index"
-        :text="message.text"
-        :sent="message.sent"
-        class="chat-message-text"
-      >
-        <template v-slot:name>{{message.name}}</template>
-        <template v-slot:stamp>{{message.stamp}}</template>
-        <template v-slot:avatar>
-          <div style="position: relative;">
-            <img
-              class="q-message-avatar q-message-avatar--sent"
-              :src="message.avatar"
-            >
-            <q-badge
-              rounded
-              :color="'light-green-14'"
-              style="position: absolute; top: 0px; right: 0px;"
-            />
+          <div class="row justify-center q-my-md">
+            <q-spinner-dots color="primary" size="40px" />
           </div>
         </template>
-      </q-chat-message>
+
+        <q-chat-message v-for="(message, index) in messageList" :key="index"
+          :text="[message.text]"
+          :sent=false
+          class="chat-message-text">
+          <template v-slot:name>{{getNicknameByUserId(message.sender)}}</template>
+          <template v-slot:stamp>{{message.created_at}}</template>
+          <template v-slot:avatar>
+            <div style="position: relative;">
+              <img class="q-message-avatar q-message-avatar" src="~src/assets/anon.jpg">
+              <q-badge
+                rounded
+                :color="'light-green-14'"
+                style="position: absolute; top: 0px; right: 0px;"
+              />
+            </div>
+          </template>
+        </q-chat-message>
 
       <div><UsersTyping/><q-spinner-dots color="gray" size="17px"/></div>
+
     </q-infinite-scroll>
+
     
     <q-dialog v-model="showUserListModal" persistent>
       <q-card>
@@ -73,6 +72,7 @@
 </template>
 
 <script lang="ts">
+import {format} from 'date-fns';
 import { Component, defineComponent, inject } from 'vue';
 import { supabase } from 'app/config/supabase';
 import UsersTyping from '../components/UsersTyping.vue'
@@ -96,22 +96,13 @@ export default defineComponent({
       userData: [],
       messageText: '',
       isLoading: false,
-      messageList: [
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["hey, how are you?"], sent: true, stamp: "7 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-      ],
+      userChannel: [],
+      messageList: [],
     }
   },
 
   //toto mozno opravit lebo zas inicializujem socket
+
   mounted() {
     const user_id = supabase.auth.session().user.id
     const user_name = supabase.auth.session().user.user_metadata.nickname
@@ -140,6 +131,17 @@ export default defineComponent({
     this.socket.on('invite', (data: any) => {
       console.log(data)
     })
+
+    const channel_id = this.$route.params.id;
+    this.socket.emit('get-messages', {channel_id: channel_id});
+
+    this.socket.on('channel-messages', (messages) => {
+      this.messageList = [messages];
+    });
+
+    this.socket.on('add-new-message', (new_message) => {
+        this.messageList = [...this.messageList, new_message];
+      });
   },
 
   methods: {
@@ -149,50 +151,18 @@ export default defineComponent({
 
     sendMessage (event: any) {
       let newMessageText = this.messageText;
-      console.log(newMessageText)
 
-      /* 
       if (newMessageText.trim() === '' || event.shiftKey) {
         return;
       }
 
-      
-      this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"}); */
-      
-      const messageData = {
-      name: "Lisa",
-      channel: "Helou",
-      text: newMessageText,
-      stamp: "now",
-    };
+      const channel_id = this.$route.params.id;
+      this.socket?.emit('message', {channel_id: channel_id, message: this.messageText});
+  
+      this.messageText = '';
 
-
-    const channel_id = this.$route.params.id;
-    
-    this.socket?.emit('message', {channel_id: channel_id, message: this.messageText})
-
-   /*  fetch('http://localhost:3333/message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(messageData), 
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json(); 
-        } else {
-          throw new Error('Request failed');
-        }
-      })
-      .then((data) => {
-        console.log('Response from server:', data);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      }); */
-
-    this.messageText = '';
+      console.log('DEBUGGGGGG\n');
+      console.log(this.messageList); //DEBUG
     },
 
     addNewline(event: any) {
@@ -201,14 +171,15 @@ export default defineComponent({
       }
     },
 
-    onLoad (index: any, done: any) { 
-      setTimeout(() => {
-        this.messageList.unshift(...[{name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["The trip last year was great, we should go again!!"], sent: true, stamp: "two weeks ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Maybe next year?"], sent: true, stamp: "two weeks ago"},])
+    getNicknameByUserId(userId: number): string | undefined {
+      const user = this.userData.find((user) => user.id === userId);
 
-        done()
-      }, 2000);
+      return user ? user.nickname: `User ${userId}`;
     },
+
+    /*onLoad (index: any, done: any) { //@load="onLoad" :offset="0" -> odobrane z infinity scroll
+      
+    },*/
   }
 });
 </script>
