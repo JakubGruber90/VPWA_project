@@ -85,32 +85,30 @@ export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
 
-  props: {
-    
-  },
 
   data () {
     return {
-      socket: Object,
       showUserListModal: false,
       userData: [],
       messageText: '',
       isLoading: false,
       userChannel: [],
       messageList: [],
+      Socket: Object
     }
   },
 
   //toto mozno opravit lebo zas inicializujem socket
 
   mounted() {
+
     const user_id = supabase.auth.session().user.id
     const user_name = supabase.auth.session().user.user_metadata.nickname
 
     initializeSocket(user_id, user_name);
 
     this.socket = getSocket();
-  
+   
     this.socket.on('join-channel', (data: any) => {
       if (typeof data === 'string') {
         alert(data);
@@ -131,6 +129,12 @@ export default defineComponent({
     this.socket.on('invite', (data: any) => {
       console.log(data)
     })
+
+    this.socket.on('add-new-message', (message) => {
+      this.messageList = [...this.messageList, message]
+    })
+
+
   },
 
   methods: {

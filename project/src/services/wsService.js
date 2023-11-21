@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 let socket;
 
 export function initializeSocket(user_id,user_name) {
+  console.log(socket)
   if (!socket) {
     socket = io('http://localhost:3333', {
       query: {

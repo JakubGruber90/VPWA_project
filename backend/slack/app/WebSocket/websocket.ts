@@ -55,8 +55,7 @@ Ws.io.on('connection', async (socket) => {
       console.error('Error fetching messages:', error);
     }
   });
-
-/*   socket.on('join', async ({channel_id, nickname}) => {
+   socket.on('join', async ({channel_id, nickname}) => {
     channel_id = parseInt(channel_id)
     if (!channels.has(channel_id)) {
       channels.set(channel_id, new Set());
@@ -78,7 +77,7 @@ Ws.io.on('connection', async (socket) => {
       invitedUserSocket.emit('join-channel',  channel);
     } 
 
-  }); */
+  });
 
   socket.on('leave', async ({channel_id }) => {
 
@@ -99,7 +98,7 @@ Ws.io.on('connection', async (socket) => {
       leaveChannel(channel_id, user_id, channels, socket)
       return;
     }
-/*
+
     if(message.startsWith("/invite ")) {
       const wordsArray = message.split(' ');
       const nickname = wordsArray[1];
@@ -127,7 +126,8 @@ Ws.io.on('connection', async (socket) => {
             return
           } else {
             const userSocket = users.get(nickname);
-            
+            let sockets = channels.get(channel_id);
+            sockets.add(userSocket);
             if (userSocket) {
               userSocket.emit('invite', channel);
             }
@@ -144,6 +144,8 @@ Ws.io.on('connection', async (socket) => {
           return
         } else {
           const userSocket = users.get(nickname);
+          let sockets = channels.get(channel_id);
+          sockets.add(userSocket);
             
           if (userSocket) {
             userSocket.emit('invite', channel);
@@ -159,8 +161,9 @@ Ws.io.on('connection', async (socket) => {
           await newChannel.save();
         }       
       }
+      return
     }
-    */
+    
     if(message.startsWith("/join ")) {
       const wordsArray = message.split(' ');
       const isPrivate = wordsArray[2] === "private" ? "private" : "public"
@@ -214,12 +217,13 @@ Ws.io.on('connection', async (socket) => {
 
     const new_message = await sendMessage(channel_id, message, user_id);
     //socket.emit('add-new-message', new_message);
-
     const currChannelSockets = channels.get(channel_id)
-    for (var channelSocket in currChannelSockets) {
-      console.log(channelSocket);
+
+    currChannelSockets.forEach(channelSocket => {
+      console.log("more")
       channelSocket.emit('add-new-message', new_message);
-    }
+    });
+
 
     if (message.startsWith("/quit")) {
       const user = user_id as string
