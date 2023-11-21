@@ -9,10 +9,10 @@ export default class ChannelsUser extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column()
+  @column({columnName: 'user'})
   public userId: number
 
-  @column()
+  @column({columnName: 'channel'})
   public channelId: number
 
   @column()

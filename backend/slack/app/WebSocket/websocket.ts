@@ -6,7 +6,7 @@ import { decodeToken} from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
 import ChannelsUser from 'App/Models/ChannelsUser';
-import Message from 'App/Models/Message';
+import Database from '@ioc:Adonis/Lucid/Database';
 
 Ws.boot()
 
@@ -19,8 +19,6 @@ Ws.io.on('connection', async (socket) => {
 
 
   socket.on('create', async ({name, isPrivate}) => {
-
-
     const user_id = socket.handshake.query.user_id as string
 
     const channel = await Channel.query().where('name', name).first();
@@ -101,60 +99,65 @@ Ws.io.on('connection', async (socket) => {
       leaveChannel(channel_id, user_id, channels, socket)
       return;
     }
-    /*
+/*
     if(message.startsWith("/invite ")) {
       const wordsArray = message.split(' ');
+      const nickname = wordsArray[1];
+      const channel = await Channel.query().where('id', channel_id).first();
+      const userToInvite = await User.query().where('nickname', nickname).first();
 
-      if (wordsArray.length >= 2) {
-        const nickname = wordsArray[1];
+      if (!userToInvite) {
+        socket.emit('invite', 'User does not exist');
+        return
+      }
 
-        const user = await User.query().where('nickname', nickname).first();
-        if(!user){
-          socket.emit('invite', "User does not exist"); 
-          return
-        }
+      const userToInviteString = userToInvite?.id as string
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToInviteString).first();
 
-        const channel = await Channel.query().where('id', channel_id).first();
-        const isPrivate = channel?.type === "private" ? "private" : "public"
-        const owner = channel?.owner as string
-        const newUserId = user.id as number
-        
-        if(isPrivate == "private") {
+      if (channelUser) {
+        socket.emit('invite', 'User is already member of this channel');
+        return
+      }
 
-          if (owner === user_id) {
-            
-            const invitedUserSocket = users.get(nickname);
-            
-            if (invitedUserSocket) {
-              invitedUserSocket.emit('invite', channel);
-
-              const newData = new ChannelsUser();
-              newData.fill({
-                channel: channel_id,
-                user: newUserId,
-              });
-      
-              await newData.save();
-            }
-
-          } else {
-            socket.emit('invite', "You dont have permission to invite to this channel"); 
+      if (channel) {
+        if (channel.type === "private") {
+          const owner = channel.owner as string
+          if (owner !== user_id) {
+            socket.emit('invite', 'You do not have permission to invite to this channel');
             return
+          } else {
+            const userSocket = users.get(nickname);
+            
+            if (userSocket) {
+              userSocket.emit('invite', channel);
+            }
+  
+            const newChannel = new ChannelsUser();
+            newChannel.fill({
+              channelId: channel_id,
+              userId: userToInvite.id as unknown as number,
+              kickVotes: 0,
+            });
+    
+            await newChannel.save();
           }
+          return
         } else {
-          
-        }
-        /*
-        const channel = await joinChannel(user.id,channel_id)
-    
-        const invitedUserSocket = users.get(nickname);
-        channelSockets.add(invitedUserSocket);
-    
-        if (invitedUserSocket) {
-          invitedUserSocket.emit('join-channel',  channel);
-        } 
-        */
-       /*
+          const userSocket = users.get(nickname);
+            
+          if (userSocket) {
+            userSocket.emit('invite', channel);
+          }
+
+          const newChannel = new ChannelsUser();
+          newChannel.fill({
+            channelId: channel_id,
+            userId: userToInvite.id as unknown as number,
+            kickVotes: 0,
+          });
+  
+          await newChannel.save();
+        }       
       }
     }
     */
@@ -198,8 +201,6 @@ Ws.io.on('connection', async (socket) => {
         const channelSockets = channels.get(newChannel.id)
         channelSockets.add(socket)
 
-        console.log(channelSockets)
-
         socket.emit("join-channel", newChannel)
       }
 
@@ -218,6 +219,128 @@ Ws.io.on('connection', async (socket) => {
     for (var channelSocket in currChannelSockets) {
       console.log(channelSocket);
       channelSocket.emit('add-new-message', new_message);
+    }
+
+    if (message.startsWith("/quit")) {
+      const user = user_id as string
+      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+
+      if(channel) {
+        let usernames: any = [];
+
+        const usersIds = await Database.rawQuery('select user from channels_users where channel = ?', [channel_id])
+      
+        await Promise.all(usersIds.map(async (userid) => {
+          const name = await Database.rawQuery('select nickname from users where id = ?', [userid.user])
+          console.log(name[0]?.nickname)
+          usernames.push(name[0]?.nickname)
+        }));
+
+        await Channel.query().where('id', channel_id).delete();
+        await ChannelsUser.query().where('channel', channel_id).delete();
+
+        console.log(usernames)
+
+        for (const name of usernames) {
+          const userSocket = users.get(name);
+          if (userSocket) {
+            userSocket.emit('leave-channel', channel_id);
+          }
+        }
+      } else {
+        socket.emit('leave-channel', 'You do not have permission to delete this channel');
+      }
+    }
+
+    if (message.startsWith("/revoke ")) {
+      const wordsArray = message.split(' ');
+      const nickname = wordsArray[1];
+      const user = user_id as string
+      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+      const userToRemove = await User.query().where('nickname', nickname).first();
+      const userToRemoveString = userToRemove?.id as string
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).first();
+
+      if (!userToRemove) {
+        socket.emit('revoke', 'User does not exist');
+        return
+      }
+
+      if (!channelUser) {
+        socket.emit('revoke', 'User is not member of this channel');
+        return
+      }
+
+      if(channel) {
+        const userSocket = users.get(nickname);
+        if (userSocket) {
+          userSocket.emit('revoke', channel_id);
+        }
+        await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).delete();
+      } else {
+        socket.emit('revoke', 'You do not have permission to remove this user');
+      }
+    }
+
+    if (message.startsWith("/quit")) {
+      const user = user_id as string
+      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+
+      if(channel) {
+        let usernames: any = [];
+
+        const usersIds = await Database.rawQuery('select user from channels_users where channel = ?', [channel_id])
+      
+        await Promise.all(usersIds.map(async (userid) => {
+          const name = await Database.rawQuery('select nickname from users where id = ?', [userid.user])
+          console.log(name[0]?.nickname)
+          usernames.push(name[0]?.nickname)
+        }));
+
+        await Channel.query().where('id', channel_id).delete();
+        await ChannelsUser.query().where('channel', channel_id).delete();
+
+        console.log(usernames)
+
+        for (const name of usernames) {
+          const userSocket = users.get(name);
+          if (userSocket) {
+            userSocket.emit('leave-channel', channel_id);
+          }
+        }
+      } else {
+        socket.emit('leave-channel', 'You do not have permission to delete this channel');
+      }
+    }
+
+    if (message.startsWith("/revoke ")) {
+      const wordsArray = message.split(' ');
+      const nickname = wordsArray[1];
+      const user = user_id as string
+      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+      const userToRemove = await User.query().where('nickname', nickname).first();
+      const userToRemoveString = userToRemove?.id as string
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).first();
+
+      if (!userToRemove) {
+        socket.emit('revoke', 'User does not exist');
+        return
+      }
+
+      if (!channelUser) {
+        socket.emit('revoke', 'User is not member of this channel');
+        return
+      }
+
+      if(channel) {
+        const userSocket = users.get(nickname);
+        if (userSocket) {
+          userSocket.emit('revoke', channel_id);
+        }
+        await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).delete();
+      } else {
+        socket.emit('revoke', 'You do not have permission to remove this user');
+      }
     }
 }
 )})
