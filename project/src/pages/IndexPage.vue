@@ -52,7 +52,7 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-    
+
     <q-footer>
       <q-form v-on:submit="sendMessage" class="full-width input">
         <q-input 
@@ -69,6 +69,13 @@
         <q-btn class="q-mr-md" round flat icon="send" type="submit"/>
       </q-form>
     </q-footer>
+    <div v-if="showSuggestions" class="channel-suggestions">
+        <ul>
+            <li v-for="(suggestion, index) in channelSuggestions" :key="index" @click="selectSuggestion(suggestion)">
+                {{ suggestion }}
+            </li>
+        </ul>
+    </div>
   </q-page>
 </template>
 
@@ -91,6 +98,8 @@ export default defineComponent({
 
   data () {
     return {
+      showSuggestions: false,
+      channelSuggestions: [],
       socket: Object,
       showUserListModal: false,
       userData: [],
@@ -111,6 +120,19 @@ export default defineComponent({
     }
   },
 
+  watch: {
+    messageText() {
+      const channel_id = this.$route.params.id;
+
+      if (this.messageText === '/join') {
+        // Send a websocket message to the server
+        this.socket.emit('suggestChannels');
+      }
+
+      this.updateSuggestions();
+    },
+  },
+  
   //toto mozno opravit lebo zas inicializujem socket
   mounted() {
     const user_id = supabase.auth.session().user.id
@@ -119,7 +141,7 @@ export default defineComponent({
     initializeSocket(user_id, user_name);
 
     this.socket = getSocket();
-  
+
     this.socket.on('join-channel', (data: any) => {
       if (typeof data === 'string') {
         alert(data);
@@ -136,9 +158,32 @@ export default defineComponent({
         this.showUserListModal = true;
       }
     });
+
+    this.socket.on('suggestChannels', (data: any) => {
+      this.channelSuggestions = data;
+      this.showSuggestions = true;
+    });
   },
 
   methods: {
+
+    selectSuggestion(suggestion: string) {
+        this.messageText = `/join ${suggestion}`;
+        this.showSuggestions = false; // Hide suggestions after selection
+    },
+
+  
+    updateSuggestions() {
+      if (this.messageText.startsWith('/join')) {
+        const query = this.messageText.substring(6).trim().toLowerCase();
+        this.channelSuggestions = this.channelSuggestions
+          .filter((channel: any) => channel.toLowerCase().includes(query));
+        this.showSuggestions = true;
+      } else {
+        this.showSuggestions = false;
+      }
+    },
+
     closeUserListModal() {
       this.showUserListModal = false;
     },
@@ -224,5 +269,23 @@ export default defineComponent({
 
 .chat-message-text {
   white-space: pre-wrap;
+}
+
+.channel-suggestions {
+  max-height: 100px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background-color: #fff;
+}
+.channel-suggestions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.channel-suggestions li {
+  cursor: pointer;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
 }
 </style>
