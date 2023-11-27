@@ -1,7 +1,7 @@
 <template>
   <q-page>
    
-      <q-infinite-scroll reverse class="scroll" ref="infScroll">
+      <q-infinite-scroll reverse class="scroll" @load="onLoad" :offset="35">
 
         <template v-slot:loading>  
           <div class="row justify-center q-my-md">
@@ -13,7 +13,7 @@
           :text="[message.text]"
           :sent=false
           class="chat-message-text">
-          <template v-slot:name>{{getNicknameByUserId(message.sender)}}</template>
+          <template v-slot:name>{{message.sender}}</template>
           <template v-slot:stamp>{{message.created_at}}</template>
           <template v-slot:avatar>
             <div style="position: relative;">
@@ -72,7 +72,6 @@
 </template>
 
 <script lang="ts">
-import {format} from 'date-fns';
 import { Component, defineComponent, inject } from 'vue';
 import { supabase } from 'app/config/supabase';
 import UsersTyping from '../components/UsersTyping.vue'
@@ -80,6 +79,7 @@ import { QInfiniteScroll } from 'quasar';
 import {initializeSocket, getSocket} from '../services/wsService';
 import { Socket } from 'socket.io-client';
 import { data } from 'autoprefixer';
+import axios from 'axios';
 
 export default defineComponent({
   name: 'IndexPage',
@@ -130,10 +130,8 @@ export default defineComponent({
       console.log(data)
     })
 
-    const channel_id = this.$route.params.id;
-    this.socket.emit('get-messages', {channel_id: channel_id});
     this.socket.on('channel-messages', (messages) => {
-      this.messageList = [messages];
+      this.messageList = [...messages];
     });
 
     this.socket.on('add-new-message', (new_message) => {
@@ -157,9 +155,6 @@ export default defineComponent({
       this.socket?.emit('message', {channel_id: channel_id, message: this.messageText});
   
       this.messageText = '';
-
-      console.log('DEBUGGGGGG\n');
-      console.log(this.messageList); //DEBUG
     },
 
     addNewline(event: any) {
@@ -168,15 +163,11 @@ export default defineComponent({
       }
     },
 
-    getNicknameByUserId(userId: number): string | undefined {
-      const user = this.userData.find((user) => user.id === userId);
-
-      return user ? user.nickname: `User ${userId}`;
+    onLoad (index: any, done: any) { //len zacate
+      const limit = 20;
+      const start = index * limit;
+      console.log("SMURF");
     },
-
-    /*onLoad (index: any, done: any) { //@load="onLoad" :offset="0" -> odobrane z infinity scroll
-      
-    },*/
   }
 });
 </script>

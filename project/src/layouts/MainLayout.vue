@@ -247,6 +247,7 @@ export default defineComponent({
       return this.channels.filter((channel:any) => channel.type == "private");
     },
   },
+  
   created() {
     this.fetchData(); 
   },
@@ -371,7 +372,7 @@ export default defineComponent({
       }
     },
     navigateToChannel(channelId: number){
-      this.fetchData();
+      this.socket.emit('load-channel', channelId);
       this.$router.push({ name: 'channelPage', params: { id: channelId } });
     }
   }
