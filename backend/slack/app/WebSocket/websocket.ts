@@ -98,6 +98,16 @@ Ws.io.on('connection', async (socket) => {
 
 
   });
+
+
+  socket.on('suggestChannels', async() => {
+    let channels = await Channel.query().where('type', 'public');
+
+    console.log('channels')
+    const channelNames = channels.map(channel => channel.$attributes.name);
+
+    socket.emit("suggestChannels", channelNames)
+  })
   
 
   socket.on('message', async ({channel_id, message}) => {
