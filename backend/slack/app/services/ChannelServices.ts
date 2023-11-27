@@ -19,6 +19,7 @@ export async function joinChannel(user_id, channel_id){
     return channel
 }
 
+//export async function 
 
 export async function leaveChannel(channel_id, user_id, channels, socket){
     const channel = await Channel.find(channel_id);

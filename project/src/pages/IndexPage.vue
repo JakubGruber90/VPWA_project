@@ -1,37 +1,36 @@
 <template>
   <q-page>
-    <q-infinite-scroll reverse @load="onLoad" :offset="0" class="scroll" ref="infScroll">
+   
+      <q-infinite-scroll reverse class="scroll" @load="onLoad" :offset="35">
 
         <template v-slot:loading>  
-        <div class="row justify-center q-my-md">
-          <q-spinner-dots color="primary" size="40px" />
-        </div>
-      </template>
-
-      <q-chat-message v-for="(message, index) in messageList" :key="index"
-        :text="message.text"
-        :sent="message.sent"
-        class="chat-message-text"
-      >
-        <template v-slot:name>{{message.name}}</template>
-        <template v-slot:stamp>{{message.stamp}}</template>
-        <template v-slot:avatar>
-          <div style="position: relative;">
-            <img
-              class="q-message-avatar q-message-avatar--sent"
-              :src="message.avatar"
-            >
-            <q-badge
-              rounded
-              :color="'light-green-14'"
-              style="position: absolute; top: 0px; right: 0px;"
-            />
+          <div class="row justify-center q-my-md">
+            <q-spinner-dots color="primary" size="40px" />
           </div>
         </template>
-      </q-chat-message>
+
+        <q-chat-message v-for="(message, index) in messageList" :key="index"
+          :text="[message.text]"
+          :sent=false
+          class="chat-message-text">
+          <template v-slot:name>{{message.sender}}</template>
+          <template v-slot:stamp>{{message.created_at}}</template>
+          <template v-slot:avatar>
+            <div style="position: relative;">
+              <img class="q-message-avatar q-message-avatar" src="~src/assets/anon.jpg">
+              <q-badge
+                rounded
+                :color="'light-green-14'"
+                style="position: absolute; top: 0px; right: 0px;"
+              />
+            </div>
+          </template>
+        </q-chat-message>
 
       <div><UsersTyping/><q-spinner-dots color="gray" size="17px"/></div>
+
     </q-infinite-scroll>
+
     
     <q-dialog v-model="showUserListModal" persistent>
       <q-card>
@@ -52,7 +51,7 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-
+    
     <q-footer>
       <q-form v-on:submit="sendMessage" class="full-width input">
         <q-input 
@@ -69,13 +68,6 @@
         <q-btn class="q-mr-md" round flat icon="send" type="submit"/>
       </q-form>
     </q-footer>
-    <div v-if="showSuggestions" class="channel-suggestions">
-        <ul>
-            <li v-for="(suggestion, index) in channelSuggestions" :key="index" @click="selectSuggestion(suggestion)">
-                {{ suggestion }}
-            </li>
-        </ul>
-    </div>
   </q-page>
 </template>
 
@@ -87,61 +79,36 @@ import { QInfiniteScroll } from 'quasar';
 import {initializeSocket, getSocket} from '../services/wsService';
 import { Socket } from 'socket.io-client';
 import { data } from 'autoprefixer';
+import axios from 'axios';
 
 export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
 
-  props: {
-    
-  },
 
   data () {
     return {
-      showSuggestions: false,
-      channelSuggestions: [],
-      socket: Object,
       showUserListModal: false,
       userData: [],
       messageText: '',
       isLoading: false,
-      messageList: [
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["hey, how are you?"], sent: true, stamp: "7 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Would be interested in going out for dinner?"], sent: true, stamp: "6 minutes ago"},
-      ],
+      userChannel: [],
+      messageList: [],
+      Socket: Object
     }
   },
 
-  watch: {
-    messageText() {
-      const channel_id = this.$route.params.id;
-
-      if (this.messageText === '/join') {
-        // Send a websocket message to the server
-        this.socket.emit('suggestChannels');
-      }
-
-      this.updateSuggestions();
-    },
-  },
-  
   //toto mozno opravit lebo zas inicializujem socket
+
   mounted() {
+
     const user_id = supabase.auth.session().user.id
     const user_name = supabase.auth.session().user.user_metadata.nickname
 
     initializeSocket(user_id, user_name);
 
     this.socket = getSocket();
-
+   
     this.socket.on('join-channel', (data: any) => {
       if (typeof data === 'string') {
         alert(data);
@@ -159,81 +126,35 @@ export default defineComponent({
       }
     });
 
-    this.socket.on('suggestChannels', (data: any) => {
-      this.channelSuggestions = data;
-      this.showSuggestions = true;
+    this.socket.on('invite', (data: any) => {
+      console.log(data)
+    })
+
+    this.socket.on('channel-messages', (messages) => {
+      this.messageList = [...messages];
+    });
+
+    this.socket.on('add-new-message', (new_message) => {
+        this.messageList = [...this.messageList, new_message]
     });
   },
 
   methods: {
-
-    selectSuggestion(suggestion: string) {
-        this.messageText = `/join ${suggestion}`;
-        this.showSuggestions = false; // Hide suggestions after selection
-    },
-
-  
-    updateSuggestions() {
-      if (this.messageText.startsWith('/join')) {
-        const query = this.messageText.substring(6).trim().toLowerCase();
-        this.channelSuggestions = this.channelSuggestions
-          .filter((channel: any) => channel.toLowerCase().includes(query));
-        this.showSuggestions = true;
-      } else {
-        this.showSuggestions = false;
-      }
-    },
-
     closeUserListModal() {
       this.showUserListModal = false;
     },
 
     sendMessage (event: any) {
       let newMessageText = this.messageText;
-      console.log(newMessageText)
 
-      /* 
       if (newMessageText.trim() === '' || event.shiftKey) {
         return;
       }
 
-      
-      this.messageList.push({name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", text: [newMessageText], sent: false, stamp: "now"}); */
-      
-      const messageData = {
-      name: "Lisa",
-      channel: "Helou",
-      text: newMessageText,
-      stamp: "now",
-    };
-
-
-    const channel_id = this.$route.params.id;
-    
-    this.socket?.emit('message', {channel_id: channel_id, message: this.messageText})
-
-   /*  fetch('http://localhost:3333/message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(messageData), 
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json(); 
-        } else {
-          throw new Error('Request failed');
-        }
-      })
-      .then((data) => {
-        console.log('Response from server:', data);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      }); */
-
-    this.messageText = '';
+      const channel_id = this.$route.params.id;
+      this.socket?.emit('message', {channel_id: channel_id, message: this.messageText});
+  
+      this.messageText = '';
     },
 
     addNewline(event: any) {
@@ -242,13 +163,10 @@ export default defineComponent({
       }
     },
 
-    onLoad (index: any, done: any) { 
-      setTimeout(() => {
-        this.messageList.unshift(...[{name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["The trip last year was great, we should go again!!"], sent: true, stamp: "two weeks ago"},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", text: ["Maybe next year?"], sent: true, stamp: "two weeks ago"},])
-
-        done()
-      }, 2000);
+    onLoad (index: any, done: any) { //len zacate
+      const limit = 20;
+      const start = index * limit;
+      console.log("SMURF");
     },
   }
 });
@@ -269,23 +187,5 @@ export default defineComponent({
 
 .chat-message-text {
   white-space: pre-wrap;
-}
-
-.channel-suggestions {
-  max-height: 100px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  padding: 10px;
-  background-color: #fff;
-}
-.channel-suggestions ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.channel-suggestions li {
-  cursor: pointer;
-  padding: 5px;
-  border-bottom: 1px solid #eee;
 }
 </style>

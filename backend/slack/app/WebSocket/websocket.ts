@@ -1,6 +1,7 @@
 import Ws from './Ws'
 
 import { joinChannel, leaveChannel, getUserList } from 'App/services/ChannelServices';
+import { getChannelMessages, sendMessage } from 'App/services/MessageServices';
 import { decodeToken} from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
@@ -44,16 +45,33 @@ Ws.io.on('connection', async (socket) => {
 
     socket.emit("create-channel", newChannel)
 
-    });
+  });
 
+  socket.on('load-channel', async (channel_id) => { //function to store user socket socket with channel and load the channel messages
+    try {
+      if (!channels.has(channel_id)) {
+        channels.set(channel_id, new Set());
+      } 
 
-/*   socket.on('join', async ({channel_id, nickname}) => {
+      const channelSockets = channels.get(channel_id);
+      if (socket && !channelSockets.has(socket)) {
+        channelSockets.add(socket);
+      }
+
+      const messages = await getChannelMessages(channel_id);
+      socket.emit('channel-messages', messages);
+    } catch (error) {
+      console.error('Load channel Error:', error);
+    }
+  });
+
+   socket.on('join', async ({channel_id, nickname}) => {
     channel_id = parseInt(channel_id)
     if (!channels.has(channel_id)) {
       channels.set(channel_id, new Set());
     } 
     const channelSockets = channels.get(channel_id)
-     channelSockets.add(socket) 
+    channelSockets.add(socket) 
 
     const user = await User.query().where('nickname', nickname).first();
     if(!user){
@@ -69,7 +87,7 @@ Ws.io.on('connection', async (socket) => {
       invitedUserSocket.emit('join-channel',  channel);
     } 
 
-  }); */
+  });
 
   socket.on('leave', async ({channel_id }) => {
 
@@ -80,16 +98,6 @@ Ws.io.on('connection', async (socket) => {
 
 
   });
-
-
-  socket.on('suggestChannels', async() => {
-    let channels = await Channel.query().where('type', 'public');
-
-    console.log('channels')
-    const channelNames = channels.map(channel => channel.$attributes.name);
-
-    socket.emit("suggestChannels", channelNames)
-  })
   
 
   socket.on('message', async ({channel_id, message}) => {
@@ -98,6 +106,7 @@ Ws.io.on('connection', async (socket) => {
     
     if(message == "/cancel"){
       leaveChannel(channel_id, user_id, channels, socket)
+      return;
     }
 
     if(message.startsWith("/invite ")) {
@@ -127,7 +136,8 @@ Ws.io.on('connection', async (socket) => {
             return
           } else {
             const userSocket = users.get(nickname);
-            
+            let sockets = channels.get(channel_id);
+            sockets.add(userSocket);
             if (userSocket) {
               userSocket.emit('invite', channel);
             }
@@ -144,6 +154,8 @@ Ws.io.on('connection', async (socket) => {
           return
         } else {
           const userSocket = users.get(nickname);
+          let sockets = channels.get(channel_id);
+          sockets.add(userSocket);
             
           if (userSocket) {
             userSocket.emit('invite', channel);
@@ -159,9 +171,10 @@ Ws.io.on('connection', async (socket) => {
           await newChannel.save();
         }       
       }
+      return
     }
-
-    if(message.startsWith("/join ")) {
+    
+    if(message.startsWith("/join ")) { //doplnit pridanie socketu
       const wordsArray = message.split(' ');
       const isPrivate = wordsArray[2] === "private" ? "private" : "public"
       const channelName = wordsArray[1];
@@ -182,7 +195,12 @@ Ws.io.on('connection', async (socket) => {
       if(channel && channel.type == "private") {
         socket.emit('join-channel',  "You dont have permission to join this channel");
       } else if (channel) {
+        //save to channeluserdb
         await channel.related('users').attach([userdb]);
+
+        const channelSockets = channels.get(channel.id)
+        channelSockets.add(socket)
+
         socket.emit('join-channel',  channel);
       } else {
         const newChannel = new Channel();
@@ -202,10 +220,13 @@ Ws.io.on('connection', async (socket) => {
 
         socket.emit("join-channel", newChannel)
       }
+
+      return;
     }
 
     if (message.startsWith("/list")) {
       getUserList(channel_id, socket);
+      return;
     }
 
     if (message.startsWith("/quit")) {
@@ -268,13 +289,24 @@ Ws.io.on('connection', async (socket) => {
         socket.emit('revoke', 'You do not have permission to remove this user');
       }
     }
+
+    //FINALLY SENDING MESSAGE, IF THE INPUT IS NOT A COMMAND
+    const new_message = await sendMessage(channel_id, message, user_id); 
+
+    if (!channels.has(channel_id)) {
+      channels.set(channel_id, new Set());
+    } 
+
+    const channelSockets = channels.get(channel_id);
+    if (socket && !channelSockets.has(socket)) {
+      channelSockets.add(socket);
+    }
+  
+    channelSockets.forEach(channelSocket => {
+      channelSocket.emit('add-new-message', new_message);
+    });
 }
 )})
-
-
-
-
-
 
 /*        fetch(`http://localhost:3333/channels/${channel_id}`, {
         method: 'DELETE',

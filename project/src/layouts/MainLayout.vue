@@ -14,7 +14,7 @@
       </div>
 
         <q-toolbar-title >
-          #Channel Name
+          {{ currentChannel ? `${currentChannel.name}` : '' }}
         </q-toolbar-title>
         <div class="" style="position: relative;">
           <q-btn
@@ -234,6 +234,7 @@ export default defineComponent({
       showStateDropdown: false,
       status: "online",
       channelToLeaveId: -1,
+      currentChannel: '',
       socket: Object
     }
   },
@@ -246,8 +247,12 @@ export default defineComponent({
       return this.channels.filter((channel:any) => channel.type == "private");
     },
   },
+  
   created() {
     this.fetchData(); 
+  },
+  updated() {
+    this.fetchData();
   },
   methods: {
 
@@ -267,6 +272,7 @@ export default defineComponent({
       .then((response) => {
         console.log(response.data.channels)
         this.channels = response.data.channels;
+        this.currentChannel = this.channels.find((channel) => channel.id === Number(this.$route.params.id));
       })
       .catch((error) => {
         console.error(error);
@@ -294,16 +300,16 @@ export default defineComponent({
     },
 
     leaveChannel() {
-      //const index = this.channels.findIndex((channel) => channel.id=== this.id);
+      const index = this.channels.findIndex((channel) => channel.id=== this.id);
 
-      //const filteredChannels = this.channels.filter((channel) => channel.id === this.channelToLeaveId);
+      const filteredChannels = this.channels.filter((channel) => channel.id === this.channelToLeaveId);
 
 
-     /*  if (index !== -1) {
+       if (index !== -1) {
         this.channels.splice(index, 1);
         this.closeExitModal();
         this.channelToLeaveName = '';
-      } */
+      } 
     },
 
     openCreateChannelModal() {
@@ -366,6 +372,7 @@ export default defineComponent({
       }
     },
     navigateToChannel(channelId: number){
+      this.socket.emit('load-channel', channelId);
       this.$router.push({ name: 'channelPage', params: { id: channelId } });
     }
   }
