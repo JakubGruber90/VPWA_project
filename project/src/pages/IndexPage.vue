@@ -131,6 +131,16 @@ export default defineComponent({
     this.socket.on('invite', (data: any) => {
       console.log(data)
     })
+
+    const channel_id = this.$route.params.id;
+    this.socket.emit('get-messages', {channel_id: channel_id});
+    this.socket.on('channel-messages', (messages) => {
+      this.messageList = [messages];
+    });
+
+    this.socket.on('add-new-message', (new_message) => {
+        this.messageList = [...this.messageList, new_message]
+    });
   },
 
   methods: {

@@ -6,8 +6,6 @@ export async function getChannelMessages(channel_id) {
 
     const messages = await Message.query().where('channel', channel_id).orderBy('created_at', 'desc').exec();
 
-    //console.log('SOPELL', messages);
-
     return messages;
 }
 
