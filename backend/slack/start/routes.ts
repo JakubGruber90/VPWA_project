@@ -27,6 +27,7 @@ Route.group(() => {
     Route.post('/message', 'MessagesController.handle_input');
     Route.get('/channels/:id', 'ChannelsController.index');
     Route.delete('/channels/:id', 'ChannelsController.leaveChannel');
+    Route.get('/message/user_nick/:id', 'MessagesController.user_nick'); //maybe useless
   }).middleware(['auth'])
 
 

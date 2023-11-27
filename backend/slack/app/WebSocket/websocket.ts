@@ -47,21 +47,31 @@ Ws.io.on('connection', async (socket) => {
 
   });
 
-  socket.on('get-messages', async (channel_id ) => {
+  socket.on('load-channel', async (channel_id) => { //function to store user socket socket with channel and load the channel messages
     try {
+      if (!channels.has(channel_id)) {
+        channels.set(channel_id, new Set());
+      } 
+
+      const channelSockets = channels.get(channel_id);
+      if (socket && !channelSockets.has(socket)) {
+        channelSockets.add(socket);
+      }
+
       const messages = await getChannelMessages(channel_id);
       socket.emit('channel-messages', messages);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Load channel Error:', error);
     }
   });
+
    socket.on('join', async ({channel_id, nickname}) => {
     channel_id = parseInt(channel_id)
     if (!channels.has(channel_id)) {
       channels.set(channel_id, new Set());
     } 
     const channelSockets = channels.get(channel_id)
-     channelSockets.add(socket) 
+    channelSockets.add(socket) 
 
     const user = await User.query().where('nickname', nickname).first();
     if(!user){
@@ -164,7 +174,7 @@ Ws.io.on('connection', async (socket) => {
       return
     }
     
-    if(message.startsWith("/join ")) {
+    if(message.startsWith("/join ")) { //doplnit pridanie socketu
       const wordsArray = message.split(' ');
       const isPrivate = wordsArray[2] === "private" ? "private" : "public"
       const channelName = wordsArray[1];
@@ -187,6 +197,10 @@ Ws.io.on('connection', async (socket) => {
       } else if (channel) {
         //save to channeluserdb
         await channel.related('users').attach([userdb]);
+
+        const channelSockets = channels.get(channel.id)
+        channelSockets.add(socket)
+
         socket.emit('join-channel',  channel);
       } else {
         const newChannel = new Channel();
@@ -214,16 +228,6 @@ Ws.io.on('connection', async (socket) => {
       getUserList(channel_id, socket);
       return;
     }
-
-    const new_message = await sendMessage(channel_id, message, user_id);
-    //socket.emit('add-new-message', new_message);
-    const currChannelSockets = channels.get(channel_id)
-
-    currChannelSockets.forEach(channelSocket => {
-      console.log("more")
-      channelSocket.emit('add-new-message', new_message);
-    });
-
 
     if (message.startsWith("/quit")) {
       const user = user_id as string
@@ -286,17 +290,21 @@ Ws.io.on('connection', async (socket) => {
       }
     }
 
-    const new_message = await sendMessage(channel_id, message, user_id);
-    const currChannelSockets = channels.get(channel_id)
+    //FINALLY SENDING MESSAGE, IF THE INPUT IS NOT A COMMAND
+    const new_message = await sendMessage(channel_id, message, user_id); 
 
-    currChannelSockets.forEach(channelSocket => {
+    if (!channels.has(channel_id)) {
+      channels.set(channel_id, new Set());
+    } 
+
+    const channelSockets = channels.get(channel_id);
+    if (socket && !channelSockets.has(socket)) {
+      channelSockets.add(socket);
+    }
+  
+    channelSockets.forEach(channelSocket => {
       channelSocket.emit('add-new-message', new_message);
     });
-
-    /*for (var channelSocket in currChannelSockets) {
-      console.log(channelSocket);
-      channelSocket.emit('add-new-message', new_message);
-    }*/
 }
 )})
 
