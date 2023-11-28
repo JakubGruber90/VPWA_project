@@ -186,10 +186,17 @@ Ws.io.on('connection', async (socket) => {
       return
     }
     
-    if(message.startsWith("/join ")) { //doplnit pridanie socketu
-      const wordsArray = message.split(' ');
+    if(message.startsWith("/join ")) { 
+      const arrayUnFiltered = message.split(' ');
+      const wordsArray = arrayUnFiltered.filter(word => word.trim() !== '');
       const isPrivate = wordsArray[2] === "private" ? "private" : "public"
-      const channelName = wordsArray[1];
+      let channelName = wordsArray[1];
+
+      if (wordsArray.length < 2) {
+        socket.emit('join-channel',  "Channel name cannot be empty");
+        return
+      }
+
       const userdb = user_id as string
       
       let channel = await Channel.query().where('name', channelName).first();
