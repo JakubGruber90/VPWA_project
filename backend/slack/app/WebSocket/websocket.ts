@@ -112,6 +112,47 @@ Ws.io.on('connection', async (socket) => {
   socket.on('message', async ({channel_id, message}) => {
     channel_id = parseInt(channel_id)
     const user_id = socket.handshake.query.user_id
+
+    if (message.startsWith("/kick ")) {
+      const wordsArray = message.split(' ');
+      const nickname = wordsArray[1];
+
+      const user = user_id as string
+      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+      const userToKick = await User.query().where('nickname', nickname).first();
+      const userToKickString = userToKick?.id as string
+
+      if (!userToKick) {
+        socket.emit('kick', 'User does not exist');
+        return
+      }
+
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToKickString).first();
+
+      const userVoteKick = await User.query().where('id', user).first();
+
+      if (userVoteKick?.nickname === nickname) {
+        socket.emit('kick', 'You cannot kick yourself, use /cancel to leave channel or /quit to delete channel');
+        return
+      }
+
+      if (!channelUser) {
+        socket.emit('kick', 'User is not member of this channel');
+        return
+      }
+
+      if(channel) {
+        const userSocket = users.get(nickname);
+        if (userSocket) {
+          userSocket.emit('kick', channel_id);
+        }
+        await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToKickString).delete();
+        return;
+      } else {
+        //tu dorobit poctanie kickov do 3 a potom vymazat usera z channeluser
+        return;
+      }
+    }
     
     if(message == "/cancel"){
       leaveChannel(channel_id, user_id, channels, socket)
@@ -144,14 +185,6 @@ Ws.io.on('connection', async (socket) => {
             socket.emit('invite', 'You do not have permission to invite to this channel');
             return
           } else {
-            /*
-            const userSocket = users.get(nickname);
-            let sockets = channels.get(channel_id);
-            sockets.add(userSocket);
-            if (userSocket) {
-              userSocket.emit('invite', channel);
-            }
-  */
             socket.emit('invite', channel);
 
             const newChannel = new ChannelsUser();
