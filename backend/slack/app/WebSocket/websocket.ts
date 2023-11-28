@@ -65,6 +65,15 @@ Ws.io.on('connection', async (socket) => {
     }
   });
 
+  socket.on('suggestChannels', async() => {
+    let channels = await Channel.query().where('type', 'public');
+
+    const channelNames = channels.map(channel => channel.$attributes.name);
+
+    socket.emit("suggestChannels", channelNames)
+  })
+
+
    socket.on('join', async ({channel_id, nickname}) => {
     channel_id = parseInt(channel_id)
     if (!channels.has(channel_id)) {
@@ -255,8 +264,11 @@ Ws.io.on('connection', async (socket) => {
             userSocket.emit('leave-channel', channel_id);
           }
         }
+
+        return;
       } else {
         socket.emit('leave-channel', 'You do not have permission to delete this channel');
+        return;
       }
     }
 

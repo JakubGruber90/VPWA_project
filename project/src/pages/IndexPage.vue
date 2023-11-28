@@ -53,6 +53,13 @@
     </q-dialog>
     
     <q-footer>
+      <div v-if="showSuggestions" class="channel-suggestions">
+        <ul>
+          <li v-for="(channel, index) in channelSuggestions" :key="index" @click="selectSuggestion(channel)">
+            {{ "a" }}
+          </li>
+        </ul>
+      </div>
       <q-form v-on:submit="sendMessage" class="full-width input">
         <q-input 
         v-model="messageText" 
@@ -88,14 +95,28 @@ export default defineComponent({
 
   data () {
     return {
+      showSuggestions: false,
+      channelSuggestions: [],
       showUserListModal: false,
       userData: [],
       messageText: '',
       isLoading: false,
       userChannel: [],
       messageList: [],
-      Socket: Object
+      Socket: Object,
+      socket: Object,
     }
+  },
+
+  watch: {
+    messageText() {
+      const channel_id = this.$route.params.id;
+      if (this.messageText === '/join') {
+        // Send a websocket message to the server
+        this.socket.emit('suggestChannels');
+      }
+      this.updateSuggestions();
+    },
   },
 
   //toto mozno opravit lebo zas inicializujem socket
@@ -137,9 +158,31 @@ export default defineComponent({
     this.socket.on('add-new-message', (new_message) => {
         this.messageList = [...this.messageList, new_message]
     });
+
+    this.socket.on('suggestChannels', (data: any) => {
+      this.channelSuggestions = data;
+      this.showSuggestions = true;
+      console.log(this.channelSuggestions)
+    });
   },
 
   methods: {
+    selectSuggestion(suggestion: string) {
+        this.messageText = `/join ${suggestion}`;
+        this.showSuggestions = false; // Hide suggestions after selection
+    },
+  
+    updateSuggestions() {
+      if (this.messageText.startsWith('/join')) {
+        const query = this.messageText.substring(6).trim().toLowerCase();
+        this.channelSuggestions = this.channelSuggestions
+          .filter((channel: any) => channel.toLowerCase().includes(query));
+        this.showSuggestions = true;
+      } else {
+        this.showSuggestions = false;
+      }
+    },
+
     closeUserListModal() {
       this.showUserListModal = false;
     },
@@ -187,5 +230,23 @@ export default defineComponent({
 
 .chat-message-text {
   white-space: pre-wrap;
+}
+
+.channel-suggestions {
+  max-height: 100px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background-color: #fff;
+}
+.channel-suggestions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.channel-suggestions li {
+  cursor: pointer;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
 }
 </style>
