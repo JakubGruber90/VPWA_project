@@ -7,6 +7,7 @@ import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
 import ChannelsUser from 'App/Models/ChannelsUser';
 import Database from '@ioc:Adonis/Lucid/Database';
+import KickUser from 'App/Models/KickUsers';
 
 Ws.boot()
 
@@ -118,7 +119,7 @@ Ws.io.on('connection', async (socket) => {
       const nickname = wordsArray[1];
 
       const user = user_id as string
-      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+      const channelOwner = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
       const userToKick = await User.query().where('nickname', nickname).first();
       const userToKickString = userToKick?.id as string
 
@@ -141,7 +142,7 @@ Ws.io.on('connection', async (socket) => {
         return
       }
 
-      if(channel) {
+      if(channelOwner) {
         const userSocket = users.get(nickname);
         if (userSocket) {
           userSocket.emit('kick', channel_id);
@@ -149,7 +150,10 @@ Ws.io.on('connection', async (socket) => {
         await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToKickString).delete();
         return;
       } else {
-        //tu dorobit poctanie kickov do 3 a potom vymazat usera z channeluser
+        const userVotes = await KickUser.query().where('userToKick', userToKickString).first();
+
+        const userVoteToKick = await KickUser.query().where('userToKick', userToKickString).andWhere('voteFrom', user).first();
+
         return;
       }
     }
