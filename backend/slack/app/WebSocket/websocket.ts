@@ -144,13 +144,16 @@ Ws.io.on('connection', async (socket) => {
             socket.emit('invite', 'You do not have permission to invite to this channel');
             return
           } else {
+            /*
             const userSocket = users.get(nickname);
             let sockets = channels.get(channel_id);
             sockets.add(userSocket);
             if (userSocket) {
               userSocket.emit('invite', channel);
             }
-  
+  */
+            socket.emit('invite', channel);
+
             const newChannel = new ChannelsUser();
             newChannel.fill({
               channelId: channel_id,
@@ -275,14 +278,23 @@ Ws.io.on('connection', async (socket) => {
     if (message.startsWith("/revoke ")) {
       const wordsArray = message.split(' ');
       const nickname = wordsArray[1];
+
       const user = user_id as string
       const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
       const userToRemove = await User.query().where('nickname', nickname).first();
       const userToRemoveString = userToRemove?.id as string
-      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).first();
 
       if (!userToRemove) {
         socket.emit('revoke', 'User does not exist');
+        return
+      }
+
+      const channelUser = await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).first();
+
+      const owner = await User.query().where('id', user).first();
+
+      if (owner?.nickname === nickname) {
+        socket.emit('revoke', 'You cannot remove yourself, use /cancel to leave channel or /quit to delete channel');
         return
       }
 
@@ -297,8 +309,10 @@ Ws.io.on('connection', async (socket) => {
           userSocket.emit('revoke', channel_id);
         }
         await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToRemoveString).delete();
+        return;
       } else {
         socket.emit('revoke', 'You do not have permission to remove this user');
+        return;
       }
     }
 

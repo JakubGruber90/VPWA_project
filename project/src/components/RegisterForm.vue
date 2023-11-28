@@ -49,7 +49,7 @@
             const username = ref("");
             const passwordRepeated = ref("");
 
-            async function registerUser(){
+            async function registerUser() {
 
                 const response = await fetch('http://localhost:3333/users', {
                     headers: {
