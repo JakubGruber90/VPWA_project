@@ -1,5 +1,6 @@
 import Channel from 'App/Models/Channel';
 import User from 'App/Models/User';
+import Message from 'App/Models/Message';
 import ChannelsUser from 'App/Models/ChannelsUser';
 import { channels } from 'App/WebSocket/websocket';
 
@@ -105,7 +106,34 @@ class ChannelsController {
             return null; 
           }
       }
-    
+
+      async getInitialMessages ({request, params, response}) {
+        const channel_id = params.id;
+
+        const messages = await Message.query().where('channel', channel_id).orderBy('created_at', 'desc').limit(20);
+
+        const updatedMessages = messages.map(message => {
+          const user = message.user;
+          return { ...message.toJSON(), sender: user ? user.nickname : null };
+        });
+
+        return updatedMessages.reverse();
+      }
+
+      async getOlderMessages ({request, params, response}) {
+        const channel_id = parseInt(request.qs().channel_id);
+        const start = parseInt(request.qs().start);
+        const limit = parseInt(request.qs().limit);
+      
+        const messages = await Message.query().where('channel', channel_id).orderBy('created_at', 'desc').offset(start).limit(limit);
+
+        const updatedMessages = messages.map(message => {
+          const user = message.user;
+          return { ...message.toJSON(), sender: user ? user.nickname : null };
+        });
+
+        return updatedMessages.reverse();
+      }
 }
 
 module.exports = ChannelsController

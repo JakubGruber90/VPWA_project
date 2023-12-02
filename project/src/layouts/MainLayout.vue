@@ -372,7 +372,6 @@ export default defineComponent({
       }
     },
     navigateToChannel(channelId: number){
-      this.socket.emit('load-channel', channelId);
       this.$router.push({ name: 'channelPage', params: { id: channelId } });
     }
   }

@@ -1,7 +1,7 @@
 <template>
   <q-page>
    
-      <q-infinite-scroll reverse class="scroll" @load="onLoad" :offset="35">
+      <q-infinite-scroll ref="infScroll" :scroll-target="$refs.infScroll" :key="$route.params.id" :initial-index="0" reverse class="scroll" @load="onLoad" :offset="0">
 
         <template v-slot:loading>  
           <div class="row justify-center q-my-md">
@@ -84,9 +84,10 @@ import { supabase } from 'app/config/supabase';
 import UsersTyping from '../components/UsersTyping.vue'
 import { QInfiniteScroll } from 'quasar';
 import {initializeSocket, getSocket} from '../services/wsService';
-import { Socket } from 'socket.io-client';
-import { data } from 'autoprefixer';
 import axios from 'axios';
+import { ref } from 'vue';
+/*import { Socket } from 'socket.io-client';
+import { data } from 'autoprefixer';*/
 
 export default defineComponent({
   name: 'IndexPage',
@@ -103,8 +104,8 @@ export default defineComponent({
       isLoading: false,
       userChannel: [],
       messageList: [],
+      endOfDB: false,
       Socket: Object,
-      socket: Object,
     }
   },
 
@@ -119,12 +120,30 @@ export default defineComponent({
     },
   },
 
+  beforeRouteUpdate(to, from, next) {
+    const newChannelId = to.params.id;
+    const auth_token = supabase.auth.session()?.access_token;
+    this.endOfDB = false;
+
+    axios.get(`http://localhost:3333/channels/initial_messages/${newChannelId}`,
+      {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        const initialMessages = response.data;
+        this.messageList = [...initialMessages];
+    }).catch((error) => {
+      console.error(error);
+    });
+
+    next();
+  },
+
   //toto mozno opravit lebo zas inicializujem socket
 
   mounted() {
 
-    const user_id = supabase.auth.session().user.id
-    const user_name = supabase.auth.session().user.user_metadata.nickname
+    const user_id = supabase.auth.session().user.id;
+    const user_name = supabase.auth.session().user.user_metadata.nickname;
+    const channel_id = this.$route.params.id;
+    const auth_token = supabase.auth.session()?.access_token;
 
     initializeSocket(user_id, user_name);
 
@@ -151,12 +170,8 @@ export default defineComponent({
       console.log(data)
     })
 
-    this.socket.on('channel-messages', (messages) => {
-      this.messageList = [...messages];
-    });
-
     this.socket.on('add-new-message', (new_message) => {
-        this.messageList = [...this.messageList, new_message]
+        this.messageList = [...this.messageList, new_message];
     });
 
     this.socket.on('suggestChannels', (data: any) => {
@@ -164,9 +179,18 @@ export default defineComponent({
       this.showSuggestions = true;
       console.log(this.channelSuggestions)
     });
+
+    axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
+      {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        const initialMessages = response.data;
+        this.messageList = [...initialMessages];
+    }).catch((error) => {
+      console.error(error);
+    });
   },
 
   methods: {
+
     selectSuggestion(suggestion: string) {
         this.messageText = `/join ${suggestion}`;
         this.showSuggestions = false; // Hide suggestions after selection
@@ -206,13 +230,40 @@ export default defineComponent({
       }
     },
 
-    onLoad (index: any, done: any) { //len zacate
-      const limit = 20;
-      const start = index * limit;
-      console.log("SMURF");
+    async onLoad(index: number, done: () => void) {
+      try {
+        const auth_token = supabase.auth.session()?.access_token
+        const limit = 20;
+        const start = index * limit;
+        const channel_id = this.$route.params.id;
+
+        await new Promise(resolve => setTimeout(resolve, 1000)); //delay, aby bolo vidno loading
+
+        axios.get(`http://localhost:3333/channels/older_messages?channel_id=${channel_id}&start=${start}&limit=${limit}`,
+        {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        
+          const olderMessages = response.data;
+          
+          if(!this.endOfDB) {
+            console.log('Loading older messages\n');
+            this.messageList = [...olderMessages, ...this.messageList];
+            if(olderMessages.length < limit) {
+              this.endOfDB = true;
+            }
+          } else {
+            console.log('No more messages in database\n');
+          }
+
+        });
+
+        done();
+      } catch (error) {
+        console.error('Error in onLoad: ', error);
+        done();
+      }
     },
   }
-});
+}); 
 </script>
 
 <style scoped>

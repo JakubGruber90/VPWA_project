@@ -23,6 +23,8 @@ import Route from '@ioc:Adonis/Core/Route'
 
 Route.group(() => {
     Route.get('/channels', 'ChannelsController.getChannels');
+    Route.get('/channels/older_messages', 'ChannelsController.getOlderMessages');
+    Route.get('/channels/initial_messages/:id', 'ChannelsController.getInitialMessages');
     Route.post('/channels', 'ChannelsController.createChannel');
     Route.post('/message', 'MessagesController.handle_input');
     Route.get('/channels/:id', 'ChannelsController.index');

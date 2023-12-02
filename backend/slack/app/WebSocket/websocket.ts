@@ -1,8 +1,8 @@
 import Ws from './Ws'
 
 import { joinChannel, leaveChannel, getUserList } from 'App/services/ChannelServices';
-import { getChannelMessages, sendMessage } from 'App/services/MessageServices';
-import { decodeToken} from "App/services/AuthServices"
+import { sendMessage } from 'App/services/MessageServices';
+import { decodeToken } from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
 import ChannelsUser from 'App/Models/ChannelsUser';
@@ -48,31 +48,13 @@ Ws.io.on('connection', async (socket) => {
 
   });
 
-  socket.on('load-channel', async (channel_id) => { //function to store user socket socket with channel and load the channel messages
-    try {
-      if (!channels.has(channel_id)) {
-        channels.set(channel_id, new Set());
-      } 
-
-      const channelSockets = channels.get(channel_id);
-      if (socket && !channelSockets.has(socket)) {
-        channelSockets.add(socket);
-      }
-
-      const messages = await getChannelMessages(channel_id);
-      socket.emit('channel-messages', messages);
-    } catch (error) {
-      console.error('Load channel Error:', error);
-    }
-  });
-
   socket.on('suggestChannels', async() => {
     let channels = await Channel.query().where('type', 'public');
 
     const channelNames = channels.map(channel => channel.$attributes.name);
 
     socket.emit("suggestChannels", channelNames)
-  })
+  });
 
 
    socket.on('join', async ({channel_id, nickname}) => {
@@ -360,7 +342,7 @@ Ws.io.on('connection', async (socket) => {
       }
     }
 
-    //FINALLY SENDING MESSAGE, IF THE INPUT IS NOT A COMMAND
+    //Poslanie spravy, ak input neobsahuje keywork pre command
     const new_message = await sendMessage(channel_id, message, user_id); 
 
     if (!channels.has(channel_id)) {
