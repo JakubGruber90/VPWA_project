@@ -113,10 +113,11 @@ export default defineComponent({
     messageText() {
       const channel_id = this.$route.params.id;
       if (this.messageText === '/join') {
-        // Send a websocket message to the server
         this.socket.emit('suggestChannels');
+        this.updateSuggestions();
       }
-      this.updateSuggestions();
+
+      this.socket?.emit('chatTyping', { message: this.messageText, channel_id: channel_id });
     },
   },
 
@@ -180,6 +181,11 @@ export default defineComponent({
       console.log(this.channelSuggestions)
     });
 
+    this.socket.on('chatTyping', (data: any) => {
+      console.log(data.message)
+      console.log(data.user)
+    });
+
     axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
       {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
         const initialMessages = response.data;
@@ -190,7 +196,6 @@ export default defineComponent({
   },
 
   methods: {
-
     selectSuggestion(suggestion: string) {
         this.messageText = `/join ${suggestion}`;
         this.showSuggestions = false; // Hide suggestions after selection

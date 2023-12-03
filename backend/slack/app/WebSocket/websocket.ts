@@ -8,6 +8,7 @@ import Channel from 'App/Models/Channel';
 import ChannelsUser from 'App/Models/ChannelsUser';
 import Database from '@ioc:Adonis/Lucid/Database';
 import KickUser from 'App/Models/KickUsers';
+import commands from 'commands';
 
 Ws.boot()
 
@@ -87,11 +88,26 @@ Ws.io.on('connection', async (socket) => {
     const user_id = socket.handshake.query.user_id
 
     leaveChannel(channel_id, user_id, channels, socket)
-
-
   });
-  
 
+  socket.on('chatTyping', async ({message, channel_id}) => {
+    channel_id = parseInt(channel_id)
+    const user_id = socket.handshake.query.user_id as string
+
+    const userdb = await User.query().where('id', user_id).first();
+    const channel = await Channel.query().where('id', channel_id).first();
+    const user = userdb?.nickname as string
+    
+    const channelSockets = channels.get(channel?.id)
+    
+    console.log(channels)
+    /*
+    channelSockets.forEach(channelSocket => {
+      channelSocket.emit('chatTyping', {message, user});
+    });
+    */
+  })
+  
   socket.on('message', async ({channel_id, message}) => {
     channel_id = parseInt(channel_id)
     const user_id = socket.handshake.query.user_id
@@ -278,14 +294,11 @@ Ws.io.on('connection', async (socket) => {
       
         await Promise.all(usersIds.map(async (userid) => {
           const name = await Database.rawQuery('select nickname from users where id = ?', [userid.user])
-          console.log(name[0]?.nickname)
           usernames.push(name[0]?.nickname)
         }));
 
         await Channel.query().where('id', channel_id).delete();
         await ChannelsUser.query().where('channel', channel_id).delete();
-
-        console.log(usernames)
 
         for (const name of usernames) {
           const userSocket = users.get(name);
