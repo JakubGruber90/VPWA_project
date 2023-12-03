@@ -82,6 +82,7 @@
                 const reqBody = {
                     id: data.user.id,
                     email: email.value,
+                    password: password.value,
                     nickname: username.value,
                     firstname: name.value,
                     lastname: surname.value,

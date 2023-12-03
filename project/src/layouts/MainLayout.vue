@@ -32,7 +32,7 @@
               <q-item clickable @click="toggleStateDropdown" class="text-weight-medium profileDropdownBtn">State</q-item>
               <q-item clickable @click="logout" class="text-weight-medium profileDropdownBtn">Logout</q-item>
               <hr>
-              <q-toggle v-model="notifsOff" label="Notifications" left-label class="text-weight-medium profileDropdownBtn" checked-icon="check" unchecked-icon="clear"/>
+              <q-toggle  @click="toggleNotifChange" v-model="notifsOff" label="Notifications" left-label class="text-weight-medium profileDropdownBtn" checked-icon="check" unchecked-icon="clear"/>
             </q-list>
           </div>
           <div v-if="showStateDropdown" class="custom-profile-dropdown  status-modal" @click="toggleStateDropdown">
@@ -86,7 +86,7 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view :socket="socket"/>
+      <router-view :socket="socket" />
     </q-page-container>
 
     <q-dialog v-model="exitModalOpen" persistent ref="leaveChannelModal">
@@ -96,7 +96,7 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Leave" color="negative" @click="leaveRequest" />
+          <q-btn flat label="Leave" color="negative" />
           <q-btn flat label="Cancel" @click="closeExitModal" />
         </q-card-actions>
       </q-card>
@@ -133,6 +133,7 @@ import { supabase } from 'app/config/supabase';
 import axios from "axios";
 import {initializeSocket, getSocket} from '../services/wsService';
 import { data } from 'autoprefixer';
+import { watch } from 'vue'
 
 
 export default defineComponent({
@@ -141,11 +142,37 @@ export default defineComponent({
   
   },
 
+  beforeRouteUpdate(to, from, next) {
+    const newChannelId = to.params.id;
+    this.channels = []
+
+    next();
+  },
+
   mounted() {
+
 
     const user_id = supabase.auth.session().user.id
     const user_name = supabase.auth.session().user.user_metadata.nickname
+    const auth_token = supabase.auth.session()?.access_token
 
+
+    axios.get('http://localhost:3333/users/personalNotification', { 
+        headers: { Authorization: `Bearer ${auth_token}`,}})
+      .then((response) => {
+        if(response.data.personal_notification == 0){
+          this.notifsOff = false
+        }
+        else{
+          this.notifsOff = true
+
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+    
+      
     initializeSocket(user_id, user_name);
 
     this.socket = getSocket();
@@ -186,18 +213,35 @@ export default defineComponent({
       console.log('Received a message:', data);
     });
 
+    this.socket.on("notification-send", (notification,username) => {
+      if(this.notifsOff && !notification.text.includes(supabase.auth.session().user.user_metadata.nickname)){
+        return
+      }
+      if (Notification.permission === 'granted') {
+      new Notification(username, { body: notification.text.length > 20 ?  notification.text.slice(0,20) + "..." : notification.text });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          new Notification(username, { body: notification.text.length > 20 ?  notification.text.slice(0,20) + "..." : notification.text });
+        }
+      });
+    }
+
+    })
+
     this.socket.on('disconnect', () => {
       console.log('Disconnected from WebSocket server');
     });
 
     this.socket.on('invite', (data) => {
-      console.log(data)
       if (typeof data === 'string') {
         alert(data);
       } else {
         this.channels = [data, ...this.channels];
       }
     });
+
+    
   },
 
   setup () {
@@ -256,27 +300,30 @@ export default defineComponent({
   },
   methods: {
 
-  /*   invite(){
-      const channel_id = this.$route.params.id;
-      this.socket.emit('join', {channel_id: channel_id, nickname: "abeca" }, (response : any) => {
-        alert("Invitation sent")
-      }); 
-
-    }*/
-
     fetchData() {
       const auth_token = supabase.auth.session()?.access_token
       
       axios.get('http://localhost:3333/channels', { 
         headers: { Authorization: `Bearer ${auth_token}`,}})
       .then((response) => {
-        console.log(response.data.channels)
         this.channels = response.data.channels;
         this.currentChannel = this.channels.find((channel) => channel.id === Number(this.$route.params.id));
       })
       .catch((error) => {
         console.error(error);
       });
+    },
+
+    toggleNotifChange(){
+      const auth_token = supabase.auth.session()?.access_token  
+      const customHeaders = {'Authorization': 'Bearer ' + auth_token}
+      axios.patch('http://localhost:3333/users/personalNotification',{state: this.notifsOff},{headers: customHeaders}).then(response => {
+        console.log("ok")
+      })
+      .catch(error => (
+        this.notifsOff = !this.notifsOff
+      )); 
+      
     },
 
     leaveRequest() {
@@ -329,17 +376,6 @@ export default defineComponent({
 
       this.socket.emit('create', {name: this.newChannel.name, isPrivate: this.newChannel.isPrivate})
 
-      /* const newChannelInstance = { ...this.newChannel };
-      const auth_token = supabase.auth.session()?.access_token  
-      
-
-           this.channels.push(newChannelInstance) 
-      const customHeaders = {'Authorization': auth_token}
-
-     /*  axios.post('http://localhost:3333/channels', newChannelInstance,{headers: customHeaders}).then(response => {
-        this.channels.push(response.data.newChannel)  
-      })
-      .catch(error => {console.log(error)}); */
 
       this.newChannel.name = '';
       this.newChannel.isPrivate = false;

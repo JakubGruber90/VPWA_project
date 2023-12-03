@@ -25,6 +25,9 @@ Route.group(() => {
     Route.get('/channels', 'ChannelsController.getChannels');
     Route.post('/channels', 'ChannelsController.createChannel');
     Route.post('/message', 'MessagesController.handle_input');
+    Route.post('/notifications', 'NotificationsController.create');
+    Route.patch('/users/personalNotification', 'UsersController.setPersonalNotification');
+    Route.get('/users/personalNotification', 'UsersController.getPersonalNotification');
     Route.get('/channels/:id', 'ChannelsController.index');
     Route.delete('/channels/:id', 'ChannelsController.leaveChannel');
   }).middleware(['auth'])

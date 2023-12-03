@@ -85,6 +85,8 @@ import UsersTyping from '../components/UsersTyping.vue'
 import { QInfiniteScroll } from 'quasar';
 import {initializeSocket, getSocket} from '../services/wsService';
 import { Socket } from 'socket.io-client';
+import { useQuasar } from 'quasar'
+import { ref, watch } from 'vue'
 import { data } from 'autoprefixer';
 import axios from 'axios';
 
@@ -92,11 +94,22 @@ export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
 
+  setup(){
+  const $q = useQuasar()
+            let isAppVis = ref(true);
 
+            watch(() => $q.appVisible, val => {
+              isAppVis.value = val;
+            })
+        return{
+          isAppVis
+        }
+      },
   data () {
     return {
       showSuggestions: false,
       channelSuggestions: [],
+      notifications: [],
       showUserListModal: false,
       userData: [],
       messageText: '',
@@ -156,13 +169,16 @@ export default defineComponent({
     });
 
     this.socket.on('add-new-message', (new_message) => {
+        if(!this.isAppVis){
+          const channel_id = this.$route.params.id;
+          this.socket?.emit('notification', {channel_id: channel_id, sender:new_message.sender, message: new_message.text});
+        }
         this.messageList = [...this.messageList, new_message]
     });
 
     this.socket.on('suggestChannels', (data: any) => {
       this.channelSuggestions = data;
       this.showSuggestions = true;
-      console.log(this.channelSuggestions)
     });
   },
 

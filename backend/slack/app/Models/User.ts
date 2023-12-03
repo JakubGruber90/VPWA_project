@@ -34,7 +34,7 @@ export default class User extends BaseModel {
   public status: 'active' | 'inactive' | 'banned'
 
   @column()
-  public personalNotification: boolean
+  public personal_notification: boolean
 
   @column.dateTime()
   public createdAt: DateTime

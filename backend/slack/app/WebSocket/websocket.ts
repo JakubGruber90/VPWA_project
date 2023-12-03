@@ -5,6 +5,7 @@ import { getChannelMessages, sendMessage } from 'App/services/MessageServices';
 import { decodeToken} from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
+import Notification from 'App/Models/Notification';
 import ChannelsUser from 'App/Models/ChannelsUser';
 import Database from '@ioc:Adonis/Lucid/Database';
 
@@ -15,9 +16,36 @@ const users = new Map();
 const channels = new Map()
 
 Ws.io.on('connection', async (socket) => {
+
   users.set(socket.handshake.query.user_name, socket);
+  const user = await User.find(socket.handshake.query.user_id);
+  if(user){
+    const userChannels = await user.related('channels').query();
+    userChannels.forEach((channel) => {
+      const channelId = channel.id
 
+      const channelSet = channels.get(channelId) || new Set();
+      channelSet.add(socket);
+      channels.set(channelId, channelSet);
+    })
+  }
 
+  socket.on('disconnect', () => {
+    for (const [key, value] of users.entries()) {
+      if (value === socket) {
+        users.delete(key);
+        break; 
+      }
+    }
+
+    channels.forEach((channel) => {
+      if (channel.has(socket)) {
+        channel.delete(socket);
+      }
+    });
+
+  });
+  
   socket.on('create', async ({name, isPrivate}) => {
     const user_id = socket.handshake.query.user_id as string
 
@@ -41,7 +69,6 @@ Ws.io.on('connection', async (socket) => {
     const channelSockets = channels.get(newChannel.id)
     channelSockets.add(socket)
 
-    console.log(channelSockets)
 
     socket.emit("create-channel", newChannel)
 
@@ -107,6 +134,22 @@ Ws.io.on('connection', async (socket) => {
 
 
   });
+
+  socket.on("notification", async({channel_id, sender, message})=> {
+    const user = await User.findBy("nickname", sender);
+
+    if (user) {
+  
+      const notification = new Notification();       
+      notification.text = message;
+      notification.recipient = user.id;
+      notification.channel = channel_id;
+      await notification.save(); 
+      
+      socket.emit("notification-send", notification,sender)
+      
+    }
+  })
   
 
   socket.on('message', async ({channel_id, message}) => {
@@ -373,29 +416,3 @@ Ws.io.on('connection', async (socket) => {
     });
 }
 )})
-
-/*        fetch(`http://localhost:3333/channels/${channel_id}`, {
-        method: 'DELETE',
-        headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth_token}`
-        },
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          return response.json(); 
-        } else {
-          throw new Error('Failed to leave channel');
-        }
-      })
-      .then((data) => {
-        console.log(data)
-        this.channels = this.channels.filter((channel:any) => channel.id != channel_id);
-        this.closeExitModal();
-        if (this.$route.path === `/channels/${channel_id}`) {
-          this.$router.push({ path: '/channels' }); // 
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-      })  */

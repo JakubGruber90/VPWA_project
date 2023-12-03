@@ -44,9 +44,7 @@ class ChannelsController {
       const channelId = params.id;
 
       const channel = await Channel.find(channelId);
-      console.log(channel)
       const userChannels = await User.query().first();
-      console.log(await userChannels?.related('channels').query())
 
       if (!channel) {
         return response.status(404).json({ error: 'Channel not found' });

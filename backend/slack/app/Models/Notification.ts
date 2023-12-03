@@ -13,10 +13,10 @@ export default class Notification extends BaseModel {
   public text: string
 
   @column()
-  public recipient: number
+  public recipient: string
 
   @column()
-  public channelId: number
+  public channel: number
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public createdAt: DateTime
@@ -31,7 +31,7 @@ export default class Notification extends BaseModel {
   public user: BelongsTo<typeof User>
 
   @belongsTo(() => Channel, {
-    localKey: 'channelId',
+    localKey: 'channel',
     foreignKey: 'id',
   })
   public channel: BelongsTo<typeof Channel>

@@ -13,6 +13,7 @@ export default class Auth {
         const decodedToken = verify(token, secret);
         const id = decodedToken.sub;
 
+
         request.userId = id;
         await next();
       } 

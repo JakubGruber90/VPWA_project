@@ -9,8 +9,9 @@ class Ws {
     /**
      * Ignore multiple calls to the boot method
      */
+    console.log(this.io)
     if (this.booted) {
-      return
+      return 
     }
 
     this.booted = true

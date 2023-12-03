@@ -51,7 +51,6 @@
                     alert(error.message)
                 }
                 else{
-                   // console.log(await supabase.auth.session())
                    router.push({ name: 'homePage' });
                 }
             }
