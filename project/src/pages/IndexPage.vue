@@ -1,7 +1,7 @@
 <template>
   <q-page>
    
-      <q-infinite-scroll reverse class="scroll" @load="onLoad" :offset="35">
+      <q-infinite-scroll ref="infScroll" :scroll-target="$refs.infScroll" :key="$route.params.id" :initial-index="0" reverse class="scroll" @load="onLoad" :offset="0">
 
         <template v-slot:loading>  
           <div class="row justify-center q-my-md">
@@ -116,8 +116,8 @@ export default defineComponent({
       isLoading: false,
       userChannel: [],
       messageList: [],
+      endOfDB: false,
       Socket: Object,
-      socket: Object,
     }
   },
 
@@ -125,19 +125,38 @@ export default defineComponent({
     messageText() {
       const channel_id = this.$route.params.id;
       if (this.messageText === '/join') {
-        // Send a websocket message to the server
         this.socket.emit('suggestChannels');
+        this.updateSuggestions();
       }
-      this.updateSuggestions();
+
+      this.socket?.emit('chatTyping', { message: this.messageText, channel_id: channel_id });
     },
+  },
+
+  beforeRouteUpdate(to, from, next) {
+    const newChannelId = to.params.id;
+    const auth_token = supabase.auth.session()?.access_token;
+    this.endOfDB = false;
+
+    axios.get(`http://localhost:3333/channels/initial_messages/${newChannelId}`,
+      {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        const initialMessages = response.data;
+        this.messageList = [...initialMessages];
+    }).catch((error) => {
+      console.error(error);
+    });
+
+    next();
   },
 
   //toto mozno opravit lebo zas inicializujem socket
 
   mounted() {
 
-    const user_id = supabase.auth.session().user.id
-    const user_name = supabase.auth.session().user.user_metadata.nickname
+    const user_id = supabase.auth.session().user.id;
+    const user_name = supabase.auth.session().user.user_metadata.nickname;
+    const channel_id = this.$route.params.id;
+    const auth_token = supabase.auth.session()?.access_token;
 
     initializeSocket(user_id, user_name);
 
@@ -164,10 +183,6 @@ export default defineComponent({
       console.log(data)
     })
 
-    this.socket.on('channel-messages', (messages) => {
-      this.messageList = [...messages];
-    });
-
     this.socket.on('add-new-message', (new_message) => {
         if(!this.isAppVis){
           const channel_id = this.$route.params.id;
@@ -179,6 +194,32 @@ export default defineComponent({
     this.socket.on('suggestChannels', (data: any) => {
       this.channelSuggestions = data;
       this.showSuggestions = true;
+    });
+
+    this.socket.on('chatTyping', (data: any) => {
+      console.log(data.message)
+      console.log(data.user)
+    });
+
+    axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
+      {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        const initialMessages = response.data;
+        this.messageList = [...initialMessages];
+    }).catch((error) => {
+      console.error(error);
+    });
+
+    this.socket.on('chatTyping', (data: any) => {
+      console.log(data.message)
+      console.log(data.user)
+    });
+
+    axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
+      {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        const initialMessages = response.data;
+        this.messageList = [...initialMessages];
+    }).catch((error) => {
+      console.error(error);
     });
   },
 
@@ -222,13 +263,40 @@ export default defineComponent({
       }
     },
 
-    onLoad (index: any, done: any) { //len zacate
-      const limit = 20;
-      const start = index * limit;
-      console.log("SMURF");
+    async onLoad(index: number, done: () => void) {
+      try {
+        const auth_token = supabase.auth.session()?.access_token
+        const limit = 20;
+        const start = index * limit;
+        const channel_id = this.$route.params.id;
+
+        await new Promise(resolve => setTimeout(resolve, 1000)); //delay, aby bolo vidno loading
+
+        axios.get(`http://localhost:3333/channels/older_messages?channel_id=${channel_id}&start=${start}&limit=${limit}`,
+        {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        
+          const olderMessages = response.data;
+          
+          if(!this.endOfDB) {
+            console.log('Loading older messages\n');
+            this.messageList = [...olderMessages, ...this.messageList];
+            if(olderMessages.length < limit) {
+              this.endOfDB = true;
+            }
+          } else {
+            console.log('No more messages in database\n');
+          }
+
+        });
+
+        done();
+      } catch (error) {
+        console.error('Error in onLoad: ', error);
+        done();
+      }
     },
   }
-});
+}); 
 </script>
 
 <style scoped>

@@ -1,13 +1,15 @@
 import Ws from './Ws'
 
 import { joinChannel, leaveChannel, getUserList } from 'App/services/ChannelServices';
-import { getChannelMessages, sendMessage } from 'App/services/MessageServices';
-import { decodeToken} from "App/services/AuthServices"
+import { sendMessage } from 'App/services/MessageServices';
+import { decodeToken } from "App/services/AuthServices"
 import User from 'App/Models/User';
 import Channel from 'App/Models/Channel';
 import Notification from 'App/Models/Notification';
 import ChannelsUser from 'App/Models/ChannelsUser';
 import Database from '@ioc:Adonis/Lucid/Database';
+import KickUser from 'App/Models/KickUsers';
+import commands from 'commands';
 
 Ws.boot()
 
@@ -74,31 +76,13 @@ Ws.io.on('connection', async (socket) => {
 
   });
 
-  socket.on('load-channel', async (channel_id) => { //function to store user socket socket with channel and load the channel messages
-    try {
-      if (!channels.has(channel_id)) {
-        channels.set(channel_id, new Set());
-      } 
-
-      const channelSockets = channels.get(channel_id);
-      if (socket && !channelSockets.has(socket)) {
-        channelSockets.add(socket);
-      }
-
-      const messages = await getChannelMessages(channel_id);
-      socket.emit('channel-messages', messages);
-    } catch (error) {
-      console.error('Load channel Error:', error);
-    }
-  });
-
   socket.on('suggestChannels', async() => {
     let channels = await Channel.query().where('type', 'public');
 
     const channelNames = channels.map(channel => channel.$attributes.name);
 
     socket.emit("suggestChannels", channelNames)
-  })
+  });
 
 
    socket.on('join', async ({channel_id, nickname}) => {
@@ -131,8 +115,6 @@ Ws.io.on('connection', async (socket) => {
     const user_id = socket.handshake.query.user_id
 
     leaveChannel(channel_id, user_id, channels, socket)
-
-
   });
 
   socket.on("notification", async({channel_id, sender, message})=> {
@@ -152,6 +134,24 @@ Ws.io.on('connection', async (socket) => {
   })
   
 
+  socket.on('chatTyping', async ({message, channel_id}) => {
+    channel_id = parseInt(channel_id)
+    const user_id = socket.handshake.query.user_id as string
+
+    const userdb = await User.query().where('id', user_id).first();
+    const channel = await Channel.query().where('id', channel_id).first();
+    const user = userdb?.nickname as string
+    
+    const channelSockets = channels.get(channel?.id)
+    
+    console.log(channels)
+    /*
+    channelSockets.forEach(channelSocket => {
+      channelSocket.emit('chatTyping', {message, user});
+    });
+    */
+  })
+  
   socket.on('message', async ({channel_id, message}) => {
     channel_id = parseInt(channel_id)
     const user_id = socket.handshake.query.user_id
@@ -161,7 +161,7 @@ Ws.io.on('connection', async (socket) => {
       const nickname = wordsArray[1];
 
       const user = user_id as string
-      const channel = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
+      const channelOwner = await Channel.query().where('owner', user).andWhere('id', channel_id).first();
       const userToKick = await User.query().where('nickname', nickname).first();
       const userToKickString = userToKick?.id as string
 
@@ -184,7 +184,7 @@ Ws.io.on('connection', async (socket) => {
         return
       }
 
-      if(channel) {
+      if(channelOwner) {
         const userSocket = users.get(nickname);
         if (userSocket) {
           userSocket.emit('kick', channel_id);
@@ -192,7 +192,10 @@ Ws.io.on('connection', async (socket) => {
         await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToKickString).delete();
         return;
       } else {
-        //tu dorobit poctanie kickov do 3 a potom vymazat usera z channeluser
+        const userVotes = await KickUser.query().where('userToKick', userToKickString).first();
+
+        const userVoteToKick = await KickUser.query().where('userToKick', userToKickString).andWhere('voteFrom', user).first();
+
         return;
       }
     }
@@ -335,14 +338,11 @@ Ws.io.on('connection', async (socket) => {
       
         await Promise.all(usersIds.map(async (userid) => {
           const name = await Database.rawQuery('select nickname from users where id = ?', [userid.user])
-          console.log(name[0]?.nickname)
           usernames.push(name[0]?.nickname)
         }));
 
         await Channel.query().where('id', channel_id).delete();
         await ChannelsUser.query().where('channel', channel_id).delete();
-
-        console.log(usernames)
 
         for (const name of usernames) {
           const userSocket = users.get(name);
@@ -399,7 +399,7 @@ Ws.io.on('connection', async (socket) => {
       }
     }
 
-    //FINALLY SENDING MESSAGE, IF THE INPUT IS NOT A COMMAND
+    //Poslanie spravy, ak input neobsahuje keywork pre command
     const new_message = await sendMessage(channel_id, message, user_id); 
 
     if (!channels.has(channel_id)) {
