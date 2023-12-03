@@ -110,10 +110,10 @@ class ChannelsController {
 
         const messages = await Message.query().where('channel', channel_id).orderBy('created_at', 'desc').limit(20);
 
-        const updatedMessages = messages.map(message => {
-          const user = message.user;
-          return { ...message.toJSON(), sender: user ? user.nickname : null };
-        });
+        const updatedMessages = await Promise.all(messages.map(async (message) => {
+          const user = await User.findOrFail(message.sender);
+          return {...message.toJSON(), sender: user?.nickname}
+      }));
 
         return updatedMessages.reverse();
       }
@@ -125,10 +125,10 @@ class ChannelsController {
       
         const messages = await Message.query().where('channel', channel_id).orderBy('created_at', 'desc').offset(start).limit(limit);
 
-        const updatedMessages = messages.map(message => {
-          const user = message.user;
-          return { ...message.toJSON(), sender: user ? user.nickname : null };
-        });
+        const updatedMessages = await Promise.all(messages.map(async (message) => {
+          const user = await User.findOrFail(message.sender);
+          return {...message.toJSON(), sender: user?.nickname}
+      }));
 
         return updatedMessages.reverse();
       }

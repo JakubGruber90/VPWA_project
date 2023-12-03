@@ -208,19 +208,6 @@ export default defineComponent({
     }).catch((error) => {
       console.error(error);
     });
-
-    this.socket.on('chatTyping', (data: any) => {
-      console.log(data.message)
-      console.log(data.user)
-    });
-
-    axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
-      {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
-        const initialMessages = response.data;
-        this.messageList = [...initialMessages];
-    }).catch((error) => {
-      console.error(error);
-    });
   },
 
   methods: {
