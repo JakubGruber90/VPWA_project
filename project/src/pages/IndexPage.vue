@@ -117,6 +117,7 @@ export default defineComponent({
       isLoading: false,
       userChannel: [],
       messageList: [],
+      userTyping: new Map(),
       endOfDB: false,
       Socket: Object,
     }
@@ -208,9 +209,12 @@ export default defineComponent({
       this.showSuggestions = true;
     });
 
-    this.socket.on('chatTyping', (data: any) => {
-      console.log(data.message)
-      console.log(data.user)
+    this.socket.on('chatTyping', (message:any, user:any) => {
+      this.userTyping.set(user, message);
+      console.log(this.userTyping);
+      const keysArray = Array.from(this.userTyping.keys());
+
+      console.log(keysArray);
     });
 
     this.socket.on('update-status', (data)=> { 
