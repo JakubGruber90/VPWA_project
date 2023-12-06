@@ -11,7 +11,7 @@ export default class Users extends BaseSchema {
       table.string('lastname', 20).notNullable()
       table.text('email').notNullable().unique()
       table.text('password').notNullable()
-      table.enu('status', ['active', 'inactive', 'banned']).defaultTo('active')
+      table.enu('status', ['online', 'offline', 'dnd']).defaultTo('online')
       table.boolean('personal_notification').defaultTo(true)
       table.timestamps()
     })

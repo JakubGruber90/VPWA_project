@@ -13,5 +13,5 @@ export async function sendMessage(channel_id, text, user_id) {
 
     message.sender = user?.nickname;
 
-    return message;
+    return {message: message, status: user.status};
 }

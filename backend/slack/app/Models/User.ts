@@ -31,7 +31,7 @@ export default class User extends BaseModel {
   public password: string
 
   @column()
-  public status: 'active' | 'inactive' | 'banned'
+  public status: 'online' | 'offline' | 'dnd'
 
   @column()
   public personal_notification: boolean

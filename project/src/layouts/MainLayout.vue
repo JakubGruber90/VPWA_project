@@ -17,6 +17,7 @@
           {{ currentChannel ? `${currentChannel.name}` : '' }}
         </q-toolbar-title>
         <div class="" style="position: relative;">
+          <span>{{ userNick }}</span>
           <q-btn
           size="20px"
             flat
@@ -25,7 +26,7 @@
             icon="account_circle"   
             @click="toggleProfileDropdown"
           />
-          <q-badge rounded :color="status == 'inactive' ? 'red' : 'light-green-14'" style="position: absolute; top: 25%; right: 0px;"/>
+          <q-badge rounded :color="status === 'dnd' ? 'red' : (status === 'online' ? 'light-green-14' : 'grey')" style="position: absolute; top: 25%; right: 0px;"/>
 
           <div v-if="showProfileDropdown && !showStateDropdown" class="custom-profile-dropdown status-modal" @click="toggleProfileDropdown">
             <q-list class="">
@@ -37,8 +38,9 @@
           </div>
           <div v-if="showStateDropdown" class="custom-profile-dropdown  status-modal" @click="toggleStateDropdown">
             <q-list>
-              <q-item clickable @click="statusChange('active')"  class="text-weight-medium" >Active <q-badge rounded color="light-green-14" style="position: absolute;top: 25%; right: 0px;" /></q-item>
-              <q-item clickable @click="statusChange('inactive')" class="text-weight-medium" >Busy<q-badge rounded color="red" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+              <q-item clickable @click="statusChange('online')"  class="text-weight-medium" >Online<q-badge rounded color="light-green-14" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+              <q-item clickable @click="statusChange('dnd')" class="text-weight-medium" >Do not disturb<q-badge rounded color="red" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+              <q-item clickable @click="statusChange('offline')" class="text-weight-medium" >Offline<q-badge rounded color="grey" style="position: absolute;top: 25%; right: 0px;" /></q-item>
             </q-list>
           </div>
         </div>
@@ -154,6 +156,7 @@ export default defineComponent({
 
     const user_id = supabase.auth.session().user.id
     const user_name = supabase.auth.session().user.user_metadata.nickname
+    this.userNick = user_name;
     const auth_token = supabase.auth.session()?.access_token
 
 
@@ -214,7 +217,7 @@ export default defineComponent({
     });
 
     this.socket.on("notification-send", (notification,username) => {
-      if(this.notifsOff && !notification.text.includes(supabase.auth.session().user.user_metadata.nickname)){
+      if(this.notifsOff && !notification.text.includes(supabase.auth.session().user.user_metadata.nickname && this.status !== 'dnd')) {
         return
       }
       if (Notification.permission === 'granted') {
@@ -279,6 +282,7 @@ export default defineComponent({
       status: "online",
       channelToLeaveId: -1,
       currentChannel: '',
+      userNick: '',
       socket: Object
     }
   },
@@ -404,6 +408,9 @@ export default defineComponent({
     },
     async logout() {
       if(this.showProfileDropdown){
+        const user_id = supabase.auth.session().user.id;
+        this.socket.emit('change-status', { id: user_id, status: 'offline' });
+
         const {error} = await supabase.auth.signOut();
         if(error){
           console.log(error)

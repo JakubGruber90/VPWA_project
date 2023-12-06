@@ -184,12 +184,23 @@ export default defineComponent({
       console.log(data)
     })
 
-    this.socket.on('add-new-message', (new_message) => {
+    this.socket.on('add-new-message', (data) => {
         if(!this.isAppVis){
           const channel_id = this.$route.params.id;
-          this.socket?.emit('notification', {channel_id: channel_id, sender:new_message.sender, message: new_message.text});
+          this.socket?.emit('notification', {channel_id: channel_id, sender: data.message.sender, message: data.message.text});
         }
-        this.messageList = [...this.messageList, new_message]
+        
+        var color; 
+        if(data.status === 'online') {
+          color = 'light-green-14';
+        } else if(data.status === 'dnd') {
+          color = 'red';
+        } else {
+          color = 'grey';
+        }
+
+        data.message.badgeColor = color;
+        this.messageList = [...this.messageList, data.message]
     });
 
     this.socket.on('suggestChannels', (data: any) => {
@@ -205,11 +216,28 @@ export default defineComponent({
     this.socket.on('update-status', (data)=> { 
       this.messageList.forEach(message =>{
         if(message.sender === data.user) {
-          var badgeColor;
-          (data.status === 'active') ? badgeColor = 'light-green-14' : badgeColor = 'red'; 
-          message.badgeColor = badgeColor;
+          var color;
+          if(data.status === 'online') {
+            color = 'light-green-14';
+          } else if(data.status === 'dnd') {
+            color = 'red';
+          } else {
+            color = 'grey';
+          }
+
+          message.badgeColor = color;
         }
       })
+
+      if(data.status === 'online' && data.oldStatus === 'offline') {
+        axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
+        {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
+        const initialMessages = response.data;
+        this.messageList = [...initialMessages];
+        }).catch((error) => {
+          console.error(error);
+        });
+      }
     });
 
     axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
@@ -219,6 +247,8 @@ export default defineComponent({
     }).catch((error) => {
       console.error(error);
     });
+
+    this.socket?.emit('change-status', { id: user_id, status: 'online' });
   },
 
   methods: {

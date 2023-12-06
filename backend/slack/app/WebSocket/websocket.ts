@@ -50,19 +50,37 @@ Ws.io.on('connection', async (socket) => {
 
   socket.on('change-status', async(data) => {
     const user = await User.findOrFail(data.id);
-    user.status = data.status;
+    const oldStatus = user.status;
+    user.status = data.status; //novy status
     await user.save();
     const userChannels = await user.related('channels').query();
+
+    if(oldStatus === 'offline' && data.status !== 'offline') { //ak z offline naspat do online/dnd, socket ide naspat k channelom, aby mal spravy
+      const userChannels = await user.related('channels').query();
+      userChannels.forEach((channel) =>{
+        const channelId = channel.id;
+
+        const channelSet = channels.get(channelId) || new Set();
+        channelSet.add(socket);
+        channels.set(channelId, channelSet);
+      })
+    }
 
     userChannels.forEach((channel)=> {
       const channelSockets = channels.get(channel.id);
 
       channelSockets.forEach((channelSocket)=> {
-        channelSocket.emit('update-status', {user: user.nickname, status: data.status});
+        channelSocket.emit('update-status', {user: user.nickname, status: data.status, oldStatus: oldStatus});
       })
     })
 
-    //Ws.io.emit('update-status', { user: user.nickname, status: data.status }); //asi to ide vsetkym, zistit, ako poslat len do chann kde je
+    if(data.status === 'offline' && oldStatus !== 'offline') { //uzivatel nedostava spravy, ked je offline
+      channels.forEach((channel) => {
+        if (channel.has(socket)) {
+          channel.delete(socket);
+        }
+      });
+    }
   })
   
   socket.on('create', async ({name, isPrivate}) => {
@@ -417,7 +435,7 @@ Ws.io.on('connection', async (socket) => {
     }
 
     //Poslanie spravy, ak input neobsahuje keywork pre command
-    const new_message = await sendMessage(channel_id, message, user_id); 
+    const response = await sendMessage(channel_id, message, user_id); 
 
     if (!channels.has(channel_id)) {
       channels.set(channel_id, new Set());
@@ -429,7 +447,7 @@ Ws.io.on('connection', async (socket) => {
     }
   
     channelSockets.forEach(channelSocket => {
-      channelSocket.emit('add-new-message', new_message);
+      channelSocket.emit('add-new-message', {message: response.message, status: response.status});
     });
 }
 )})

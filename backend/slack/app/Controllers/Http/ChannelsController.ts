@@ -113,7 +113,14 @@ class ChannelsController {
 
         const updatedMessages = await Promise.all(messages.map(async (message) => {
           const user = await User.findOrFail(message.sender);
-          (user.status === 'active') ? color = 'light-green-14' : color = 'red'; 
+          if(user.status === 'online') {
+            color = 'light-green-14';
+          } else if(user.status === 'dnd') {
+            color = 'red';
+          } else {
+            color = 'grey';
+          }
+
           return {...message.toJSON(), sender: user?.nickname, badgeColor: color}
       }));
 
@@ -130,7 +137,14 @@ class ChannelsController {
 
         const updatedMessages = await Promise.all(messages.map(async (message) => {
           const user = await User.findOrFail(message.sender);
-          (user.status === 'active') ? color = 'light-green-14' : color = 'red'; 
+          if(user.status === 'online') {
+            color = 'light-green-14';
+          } else if(user.status === 'dnd') {
+            color = 'red';
+          } else {
+            color = 'grey';
+          }
+          
           return {...message.toJSON(), sender: user?.nickname, badgeColor: color}
       }));
 
