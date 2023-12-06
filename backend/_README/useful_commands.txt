@@ -1,7 +1,0 @@
-node ace serve --watch - spustenie backendu
-node ace migration:run  - nahodenie tabuliek do vasej db
-
-node ace make:controller SampleController  -- vyvorenie controllera
-
-
-
