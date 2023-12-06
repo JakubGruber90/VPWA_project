@@ -244,6 +244,22 @@ export default defineComponent({
       }
     });
 
+    this.socket.on('kick', (data: any) => {
+      if (typeof data === 'string') {
+        alert(data);
+      } else {
+        const channelIndex = this.channels.findIndex((channel: any) => channel.id === data.id);
+
+        if (channelIndex !== -1) {
+          if (this.channels[channelIndex].type === 'public') {
+            this.channels.splice(channelIndex, 1);
+          } else if (this.channels[channelIndex].type === 'private') {
+            this.channels.splice(channelIndex, 1);
+          }
+    }
+
+      }
+    });
     
   },
 

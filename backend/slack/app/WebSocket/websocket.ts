@@ -184,18 +184,13 @@ Ws.io.on('connection', async (socket) => {
       }
     });
     
-    console.log("--------------------------");
-    console.log("channel_id");
     userOfChannel.forEach(channelSocket => {
       //console.log(channelSocket);
       channelSocket.emit('chatTyping', {message, user});
     });
 
-    console.log("--------------------------");
-
     const channelSockets = channels.get(channel?.id)
     
-    console.log(message);
     /*
     channelSockets.forEach(channelSocket => {
       channelSocket.emit('chatTyping', {message, user});
@@ -208,6 +203,8 @@ Ws.io.on('connection', async (socket) => {
     const user_id = socket.handshake.query.user_id
 
     if (message.startsWith("/kick ")) {
+      //await KickUser.query().delete();
+      
       const wordsArray = message.split(' ');
       const nickname = wordsArray[1];
 
@@ -251,12 +248,13 @@ Ws.io.on('connection', async (socket) => {
           return
         }
 
-        //count how many votes are there
-        const userVotes: any = await KickUser.query().where('userToKick', userToKickString).count('* as total');
+        //number how many votes are there
+        const userVotes = await KickUser.query().where('userToKick', userToKickString).select();
 
-        console.log(userVotes[0].total)
+        console.log(userVotes.length)
 
-        if(userVotes[0].total >= 2) {
+        
+        if(userVotes.length >= 2) {
           if (userSocket) {
 
             await KickUser.query().where('userToKick', userToKickString).delete();
@@ -273,7 +271,7 @@ Ws.io.on('connection', async (socket) => {
           voteFrom: user
         });
         await newKick.save();
-
+        const j = await KickUser.query().where('userToKick', userToKickString).select();
         return;
       }
     }
