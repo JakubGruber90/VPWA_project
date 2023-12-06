@@ -25,7 +25,7 @@
             icon="account_circle"   
             @click="toggleProfileDropdown"
           />
-          <q-badge rounded :color="status == 'offline' ? 'red' : 'light-green-14'" style="position: absolute; top: 25%; right: 0px;"/>
+          <q-badge rounded :color="status == 'inactive' ? 'red' : 'light-green-14'" style="position: absolute; top: 25%; right: 0px;"/>
 
           <div v-if="showProfileDropdown && !showStateDropdown" class="custom-profile-dropdown status-modal" @click="toggleProfileDropdown">
             <q-list class="">
@@ -37,8 +37,8 @@
           </div>
           <div v-if="showStateDropdown" class="custom-profile-dropdown  status-modal" @click="toggleStateDropdown">
             <q-list>
-              <q-item clickable @click="status = 'online'"  class="text-weight-medium" >Active <q-badge rounded color="light-green-14" style="position: absolute;top: 25%; right: 0px;" /></q-item>
-              <q-item clickable @click="status = 'offline'" class="text-weight-medium" >Busy<q-badge rounded color="red" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+              <q-item clickable @click="statusChange('active')"  class="text-weight-medium" >Active <q-badge rounded color="light-green-14" style="position: absolute;top: 25%; right: 0px;" /></q-item>
+              <q-item clickable @click="statusChange('inactive')" class="text-weight-medium" >Busy<q-badge rounded color="red" style="position: absolute;top: 25%; right: 0px;" /></q-item>
             </q-list>
           </div>
         </div>
@@ -299,6 +299,12 @@ export default defineComponent({
     this.fetchData();
   },
   methods: {
+
+    statusChange(status: string) {
+      const user_id = supabase.auth.session().user.id;
+      this.status = status;
+      this.socket.emit('change-status', { id: user_id, status: status });
+    },
 
     fetchData() {
       const auth_token = supabase.auth.session()?.access_token

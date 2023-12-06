@@ -1,10 +1,10 @@
 <template>
   <q-page>
    
-      <q-infinite-scroll ref="infScroll" :scroll-target="$refs.infScroll" :key="$route.params.id" :initial-index="0" reverse class="scroll" @load="onLoad" :offset="0">
+      <q-infinite-scroll ref="infScroll" :scroll-target="$refs.infScroll" :key="$route.params.id" :initial-index="0" reverse class="scroll" @load="onLoad" :offset="35">
 
         <template v-slot:loading>  
-          <div class="row justify-center q-my-md">
+          <div v-if="!endOfDB" class="row justify-center q-my-md">
             <q-spinner-dots color="primary" size="40px" />
           </div>
         </template>
@@ -12,7 +12,8 @@
         <q-chat-message v-for="(message, index) in messageList" :key="index"
           :text="[message.text]"
           :sent=false
-          class="chat-message-text">
+          class="chat-message-text"
+          :bgColor="isMentioned(message.text) ? 'orange' : 'green'">
           <template v-slot:name>{{message.sender}}</template>
           <template v-slot:stamp>{{message.created_at}}</template>
           <template v-slot:avatar>
@@ -20,7 +21,7 @@
               <img class="q-message-avatar q-message-avatar" src="~src/assets/anon.jpg">
               <q-badge
                 rounded
-                :color="'light-green-14'"
+                :color="message.badgeColor"
                 style="position: absolute; top: 0px; right: 0px;"
               />
             </div>
@@ -79,7 +80,7 @@
 </template>
 
 <script lang="ts">
-import { Component, defineComponent, inject } from 'vue';
+import { Component, defineComponent, inject, resolveDirective } from 'vue';
 import { supabase } from 'app/config/supabase';
 import UsersTyping from '../components/UsersTyping.vue'
 import { QInfiniteScroll } from 'quasar';
@@ -201,6 +202,16 @@ export default defineComponent({
       console.log(data.user)
     });
 
+    this.socket.on('update-status', (data)=> { 
+      this.messageList.forEach(message =>{
+        if(message.sender === data.user) {
+          var badgeColor;
+          (data.status === 'active') ? badgeColor = 'light-green-14' : badgeColor = 'red'; 
+          message.badgeColor = badgeColor;
+        }
+      })
+    });
+
     axios.get(`http://localhost:3333/channels/initial_messages/${channel_id}`,
       {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
         const initialMessages = response.data;
@@ -211,6 +222,13 @@ export default defineComponent({
   },
 
   methods: {
+    isMentioned(message_text) {
+      const current_user_name = supabase.auth.session().user.user_metadata.nickname;
+      const mentionPattern = new RegExp(`@${current_user_name}\\b`, 'i');
+      return mentionPattern.test(message_text);
+    },
+
+
     selectSuggestion(suggestion: string) {
         this.messageText = `/join ${suggestion}`;
         this.showSuggestions = false; // Hide suggestions after selection
@@ -257,7 +275,7 @@ export default defineComponent({
         const start = index * limit;
         const channel_id = this.$route.params.id;
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); //delay, aby bolo vidno loading
+        await new Promise(resolve => setTimeout(resolve, 500)); //delay, aby bolo vidno loading
 
         axios.get(`http://localhost:3333/channels/older_messages?channel_id=${channel_id}&start=${start}&limit=${limit}`,
         {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
@@ -266,12 +284,14 @@ export default defineComponent({
           
           if(!this.endOfDB) {
             console.log('Loading older messages\n');
+            console.log(this.endOfDB);
             this.messageList = [...olderMessages, ...this.messageList];
             if(olderMessages.length < limit) {
               this.endOfDB = true;
+              console.log('No more messages in database');
+              console.log(this.endOfDB);
+              return;
             }
-          } else {
-            console.log('No more messages in database\n');
           }
 
         });

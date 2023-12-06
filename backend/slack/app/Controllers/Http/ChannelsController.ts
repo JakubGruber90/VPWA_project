@@ -109,10 +109,12 @@ class ChannelsController {
         const channel_id = params.id;
 
         const messages = await Message.query().where('channel', channel_id).orderBy('created_at', 'desc').limit(20);
+        var color;
 
         const updatedMessages = await Promise.all(messages.map(async (message) => {
           const user = await User.findOrFail(message.sender);
-          return {...message.toJSON(), sender: user?.nickname}
+          (user.status === 'active') ? color = 'light-green-14' : color = 'red'; 
+          return {...message.toJSON(), sender: user?.nickname, badgeColor: color}
       }));
 
         return updatedMessages.reverse();
@@ -124,10 +126,12 @@ class ChannelsController {
         const limit = parseInt(request.qs().limit);
       
         const messages = await Message.query().where('channel', channel_id).orderBy('created_at', 'desc').offset(start).limit(limit);
+        var color;
 
         const updatedMessages = await Promise.all(messages.map(async (message) => {
           const user = await User.findOrFail(message.sender);
-          return {...message.toJSON(), sender: user?.nickname}
+          (user.status === 'active') ? color = 'light-green-14' : color = 'red'; 
+          return {...message.toJSON(), sender: user?.nickname, badgeColor: color}
       }));
 
         return updatedMessages.reverse();

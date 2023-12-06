@@ -47,6 +47,23 @@ Ws.io.on('connection', async (socket) => {
     });
 
   });
+
+  socket.on('change-status', async(data) => {
+    const user = await User.findOrFail(data.id);
+    user.status = data.status;
+    await user.save();
+    const userChannels = await user.related('channels').query();
+
+    userChannels.forEach((channel)=> {
+      const channelSockets = channels.get(channel.id);
+
+      channelSockets.forEach((channelSocket)=> {
+        channelSocket.emit('update-status', {user: user.nickname, status: data.status});
+      })
+    })
+
+    //Ws.io.emit('update-status', { user: user.nickname, status: data.status }); //asi to ide vsetkym, zistit, ako poslat len do chann kde je
+  })
   
   socket.on('create', async ({name, isPrivate}) => {
     const user_id = socket.handshake.query.user_id as string
