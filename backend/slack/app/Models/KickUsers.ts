@@ -7,11 +7,11 @@ export default class KickUser extends BaseModel {
     @column({ isPrimary: true })
     public id: number
   
-    @column()
-    public userToKick: number
+    @column({ columnName: 'userToKick'})
+    public userToKick: string
   
-    @column()
-    public voteFrom: number
+    @column({ columnName: 'voteFrom'})
+    public voteFrom: string
   
     @belongsTo(() => User, {
       localKey: 'userToKick',

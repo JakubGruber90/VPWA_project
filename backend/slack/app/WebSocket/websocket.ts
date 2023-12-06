@@ -152,22 +152,38 @@ Ws.io.on('connection', async (socket) => {
   
 
   socket.on('chatTyping', async ({message, channel_id}) => {
+    let userOfChannel;
     channel_id = parseInt(channel_id)
     const user_id = socket.handshake.query.user_id as string
 
     const userdb = await User.query().where('id', user_id).first();
     const channel = await Channel.query().where('id', channel_id).first();
     const user = userdb?.nickname as string
+
+    channels.forEach((value, key) => {
+      if (key === channel_id) {
+        userOfChannel = value;
+      }
+    });
     
+    console.log("--------------------------");
+    console.log("channel_id");
+    userOfChannel.forEach(channelSocket => {
+      //console.log(channelSocket);
+      channelSocket.emit('chatTyping', {message, user});
+    });
+
+    console.log("--------------------------");
+
     const channelSockets = channels.get(channel?.id)
     
-    console.log(channels)
+    console.log(message);
     /*
     channelSockets.forEach(channelSocket => {
       channelSocket.emit('chatTyping', {message, user});
     });
     */
-  })
+  });
   
   socket.on('message', async ({channel_id, message}) => {
     channel_id = parseInt(channel_id)
@@ -201,17 +217,44 @@ Ws.io.on('connection', async (socket) => {
         return
       }
 
+      const userSocket = users.get(nickname);
+
       if(channelOwner) {
-        const userSocket = users.get(nickname);
         if (userSocket) {
           userSocket.emit('kick', channel_id);
         }
         await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToKickString).delete();
         return;
       } else {
-        const userVotes = await KickUser.query().where('userToKick', userToKickString).first();
-
         const userVoteToKick = await KickUser.query().where('userToKick', userToKickString).andWhere('voteFrom', user).first();
+
+        if(userVoteToKick) {
+          socket.emit('kick', 'You already voted to kick this user');
+          return
+        }
+
+        //count how many votes are there
+        const userVotes: any = await KickUser.query().where('userToKick', userToKickString).count('* as total');
+
+        console.log(userVotes[0].total)
+
+        if(userVotes[0].total >= 2) {
+          if (userSocket) {
+
+            await KickUser.query().where('userToKick', userToKickString).delete();
+
+            await ChannelsUser.query().where('channel', channel_id).andWhere('user', userToKickString).delete();
+            userSocket.emit('kick', channel_id);
+            return;
+          }
+        }
+
+        const newKick = new KickUser();
+        newKick.fill({
+          userToKick: userToKickString,
+          voteFrom: user
+        });
+        await newKick.save();
 
         return;
       }
