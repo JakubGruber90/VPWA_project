@@ -177,6 +177,7 @@ Ws.io.on('connection', async (socket) => {
     const userdb = await User.query().where('id', user_id).first();
     const channel = await Channel.query().where('id', channel_id).first();
     const user = userdb?.nickname as string
+    const channelName = channel?.name as string
 
     channels.forEach((value, key) => {
       if (key === channel_id) {
@@ -186,7 +187,7 @@ Ws.io.on('connection', async (socket) => {
     
     userOfChannel.forEach(channelSocket => {
       //console.log(channelSocket);
-      channelSocket.emit('chatTyping', {message, user});
+      channelSocket.emit('chatTyping', {message, user, channelName});
     });
 
     const channelSockets = channels.get(channel?.id)

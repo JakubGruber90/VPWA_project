@@ -3,12 +3,12 @@
     <a class="user">
       <q-popup-proxy anchor="bottom right" self="top right">
         <q-list class="typingUserList">
-          <q-item clickable v-for="(user, index) in users" :key="index" @click="openMessageDialog(user)">
+          <q-item clickable v-for="(user, index) in userTyping" :key="index" @click="openMessageDialog(user)">
             <a>
-              <q-avatar :name="user.name" :avatar="user.avatar" class="q-mb-sm">
-                <img :src="user.avatar" />
+              <q-avatar :name="user.user" class="q-mb-sm">
+              <!--  <img :src="user.avatar" /> -->
               </q-avatar>
-              {{ user.name }}
+              {{ user.user }}
             </a>
           </q-item>
         </q-list>
@@ -28,34 +28,36 @@
 
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, PropType } from 'vue';
+
+interface UserTypingData {
+  user: string;
+  channel: string;
+  message: string;
+}
 
 export default defineComponent({
   name: 'UsersTyping',
+
+  props: {
+    userTyping: {
+      type: Array as PropType<UserTypingData[]>,
+      default: () => [],
+    },
+  },
 
   data () {
     return {
       messageDialogeOpened: false,
       userMessage: '',
       userName: '',
-
-      users: [
-        {name: "Lisa", avatar: "https://cdn.quasar.dev/img/avatar2.jpg", message: "Typing something, I want to see what it does."},
-        {name: "Andrew", avatar: "https://cdn.quasar.dev/img/avatar4.jpg", message: "You SEE what I TYPE? That's pretty creepy. I think I'll uninstall this app"},
-        {name: "Brad", avatar: "https://cdn.quasar.dev/img/avatar1.jpg", message: "Boink"},
-        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "We should go camping sometime soon. I'm so bored you would ot believe."},
-
-        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "We should go camping sometime soon. I'm so bored you would ot believe."},
-        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "We should go camping sometime soon. I'm so bored you would ot believe."},
-        {name: "Stacy", avatar: "https://cdn.quasar.dev/img/avatar3.jpg", message: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
-      ],
     }
   },
 
   methods: {
-    openMessageDialog(user: {name: string, avatar: string, message: string}) {
+    openMessageDialog(user: UserTypingData) {
       this.userMessage = user.message;
-      this.userName = user.name;
+      this.userName = user.user;
       this.messageDialogeOpened = true;
     },
 

@@ -28,7 +28,7 @@
           </template>
         </q-chat-message>
 
-      <div><UsersTyping/><q-spinner-dots color="gray" size="17px"/></div>
+      <div><UsersTyping :userTyping="userTyping"/><q-spinner-dots color="gray" size="17px"/></div>
 
     </q-infinite-scroll>
 
@@ -91,6 +91,12 @@ import { ref, watch } from 'vue'
 import { data } from 'autoprefixer';
 import axios from 'axios';
 
+interface ChannelData {
+  channel: string;
+  message: string; 
+  user: string;
+}
+
 export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
@@ -117,7 +123,7 @@ export default defineComponent({
       isLoading: false,
       userChannel: [],
       messageList: [],
-      userTyping: new Map(),
+      userTyping: [] as ChannelData[],
       endOfDB: false,
       Socket: Object,
     }
@@ -209,12 +215,34 @@ export default defineComponent({
       this.showSuggestions = true;
     });
 
-    this.socket.on('chatTyping', (message:any, user:any) => {
-      this.userTyping.set(user, message);
-      console.log(this.userTyping);
-      const keysArray = Array.from(this.userTyping.keys());
+    this.socket.on('chatTyping', (data: any) => {
+      const existsIndex = this.userTyping.findIndex((element) => {
+        return element.user === data.user && element.channel === data.channel;
+      });
 
-      console.log(keysArray);
+      console.log(existsIndex);
+      console.log("this.userTyping");
+
+      const newRecord: ChannelData = {
+        channel: data.channel,
+        message: data.message,
+        user: data.user,
+      };
+
+      if (existsIndex === -1) {
+        console.log("New record");
+        this.userTyping.push(newRecord);
+      } else {
+        console.log("Existing record");
+        this.userTyping[existsIndex] = newRecord;
+      }
+
+      this.userTyping.forEach((channelData, index) => {
+        console.log(`Index ${index}:`);
+        console.log("Channel:", channelData.channel);
+        console.log("Message:", channelData.message);
+        console.log("User:", channelData.user);
+      });
     });
 
     this.socket.on('update-status', (data)=> { 
