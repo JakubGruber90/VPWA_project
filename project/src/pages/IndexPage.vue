@@ -98,6 +98,13 @@ interface ChannelData {
   user: string;
 }
 
+interface MessageData {
+  text: string;
+  sender: string;
+  created_at: string;
+  badgeColor: string;
+}
+
 export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
@@ -136,10 +143,11 @@ export default defineComponent({
       messageText: '',
       isLoading: false,
       userChannel: [],
-      messageList: [],
+      messageList: [] as MessageData[],
       userTyping: [] as ChannelData[],
       endOfDB: false,
-      Socket: Object,
+      socket: {} as Socket,
+      Socket: {} as Socket,
     }
   },
 
@@ -178,10 +186,19 @@ export default defineComponent({
 
   mounted() {
 
-    const user_id = supabase.auth.session().user.id;
-    const user_name = supabase.auth.session().user.user_metadata.nickname;
     const channel_id = this.$route.params.id;
     const auth_token = supabase.auth.session()?.access_token;
+
+    const authSession = supabase.auth.session();
+    let user_name = '';
+    let user_id = '';
+
+    if (authSession && authSession.user) {
+      user_id = authSession.user.id;
+      if (authSession.user.user_metadata) {
+        user_name = authSession.user.user_metadata.nickname;
+      }
+    }
 
     initializeSocket(user_id, user_name);
 
@@ -196,10 +213,8 @@ export default defineComponent({
     });
 
     this.socket.on('user-list', (data: any) => {
-      console.log(data)
-
       if(data.length > 0) {
-        this.userData = data.flatMap(innerArray => innerArray.map(obj => obj.nickname));
+        this.userData = data.flatMap((innerArray: any[]) => innerArray.map(obj => obj.nickname));
         this.showUserListModal = true;
       }
     });
@@ -296,8 +311,8 @@ export default defineComponent({
   },
 
   methods: {
-    isMentioned(message_text) {
-      const current_user_name = supabase.auth.session().user.user_metadata.nickname;
+    isMentioned(message_text: string) {
+      const current_user_name = supabase.auth.session()?.user?.user_metadata?.nickname || '';
       const mentionPattern = new RegExp(`@${current_user_name}\\b`, 'i');
       return mentionPattern.test(message_text);
     },

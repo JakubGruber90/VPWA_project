@@ -98,7 +98,7 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Leave" color="negative" />
+          <q-btn flat label="Leave" color="negative" @click="leaveRequest"/>
           <q-btn flat label="Cancel" @click="closeExitModal" />
         </q-card-actions>
       </q-card>
@@ -134,9 +134,16 @@ import { useQuasar } from 'quasar'
 import { supabase } from 'app/config/supabase';
 import axios from "axios";
 import {initializeSocket, getSocket} from '../services/wsService';
+import { Socket } from 'socket.io-client';
 import { data } from 'autoprefixer';
 import { watch } from 'vue'
 
+interface Channel {
+  id: number;
+  name: string;
+  type: string;
+  owner: string;
+}
 
 export default defineComponent({
   name: 'MainLayout',
@@ -152,10 +159,21 @@ export default defineComponent({
   },
 
   mounted() {
+    //const user_id = supabase.auth.session().user.id
+    //const user_name = supabase.auth.session().user.user_metadata.nickname
+    
+    const authSession = supabase.auth.session();
+    let user_name = '';
+    let user_id = '';
 
 
-    const user_id = supabase.auth.session().user.id
-    const user_name = supabase.auth.session().user.user_metadata.nickname
+    if (authSession && authSession.user) {
+      user_id = authSession.user.id;
+      if (authSession.user.user_metadata) {
+        user_name = authSession.user.user_metadata.nickname;
+      }
+    } 
+    
     this.userNick = user_name;
     const auth_token = supabase.auth.session()?.access_token
 
@@ -184,15 +202,15 @@ export default defineComponent({
       console.log('Connected to WebSocket server');
     });
     
-    this.socket.on('create-channel', (channel) => {
+    this.socket.on('create-channel', (channel: Channel) => {
       this.channels = [channel, ...this.channels];
     });
 
-    this.socket.on('join-channel', (channel) => {
+    this.socket.on('join-channel', (channel: Channel) => {
       this.channels = [channel, ...this.channels];
     });
 
-    this.socket.on('leave-channel', (data) => {
+    this.socket.on('leave-channel', (data: string | Channel) => {
       if (typeof data === 'string') {
         alert(data);
       } else {
@@ -202,7 +220,7 @@ export default defineComponent({
       }
     });
 
-    this.socket.on('revoke', (data) => {
+    this.socket.on('revoke', (data: string | Channel) => {
       if (typeof data === 'string') {
         alert(data);
       } else {
@@ -212,7 +230,7 @@ export default defineComponent({
       }
     })
 
-    this.socket.on('message', (data) => {
+    this.socket.on('message', (data: string) => {
       console.log('Received a message:', data);
     });
 
@@ -236,7 +254,7 @@ export default defineComponent({
       console.log('Disconnected from WebSocket server');
     });
 
-    this.socket.on('invite', (data) => {
+    this.socket.on('invite', (data: any) => {
       if (typeof data === 'string') {
         alert(data);
       } else {
@@ -286,7 +304,7 @@ export default defineComponent({
     return {
       notifsOff: false,
       leftDrawerOpen: false,
-      channels: [],
+      channels: [] as Channel[],
       exitModalOpen: false,
       createChannelModalOpen: false,
       newChannel: {
@@ -297,9 +315,9 @@ export default defineComponent({
       showStateDropdown: false,
       status: "online",
       channelToLeaveId: -1,
-      currentChannel: '',
+      currentChannel: null as Channel | null,
       userNick: '',
-      socket: Object
+      socket: {} as Socket
     }
   },
 
@@ -333,7 +351,7 @@ export default defineComponent({
         headers: { Authorization: `Bearer ${auth_token}`,}})
       .then((response) => {
         this.channels = response.data.channels;
-        this.currentChannel = this.channels.find((channel) => channel.id === Number(this.$route.params.id));
+        this.currentChannel = this.channels.find((channel) => channel.id === Number(this.$route.params.id)) || null;
       })
       .catch((error) => {
         console.error(error);
@@ -353,7 +371,6 @@ export default defineComponent({
     },
 
     leaveRequest() {
-
       const channel_id = this.$route.params.id
       this.socket.emit('leave', {channel_id: channel_id});
 
@@ -370,19 +387,6 @@ export default defineComponent({
 
     closeExitModal() {
       this.exitModalOpen = false;
-    },
-
-    leaveChannel() {
-      const index = this.channels.findIndex((channel) => channel.id=== this.id);
-
-      const filteredChannels = this.channels.filter((channel) => channel.id === this.channelToLeaveId);
-
-
-       if (index !== -1) {
-        this.channels.splice(index, 1);
-        this.closeExitModal();
-        this.channelToLeaveName = '';
-      } 
     },
 
     openCreateChannelModal() {
@@ -419,23 +423,31 @@ export default defineComponent({
     toggleStateDropdown() {
       this.showStateDropdown = !this.showStateDropdown;
     },
+
     navigateToProfile() {
       //
     },
-    async logout() {
-      if(this.showProfileDropdown){
-        const user_id = supabase.auth.session().user.id;
-        this.socket.emit('change-status', { id: user_id, status: 'offline' });
 
-        const {error} = await supabase.auth.signOut();
-        if(error){
-          console.log(error)
-        }
-        else{
-          this.$router.push({ name: 'loginPage' });
+    async logout() {
+      if (this.showProfileDropdown) {
+        const session = supabase.auth.session();
+
+        if (session && session.user) {
+          const user_id = session.user.id;
+          this.socket.emit('change-status', { id: user_id, status: 'offline' });
+
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.log(error);
+          } else {
+            this.$router.push({ name: 'loginPage' });
+          }
+        } else {
+          console.log("User session or user object is null or undefined");
         }
       }
     },
+
     navigateToChannel(channelId: number){
       this.$router.push({ name: 'channelPage', params: { id: channelId } });
     }
