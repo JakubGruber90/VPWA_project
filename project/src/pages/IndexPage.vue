@@ -11,7 +11,7 @@
 
         <q-chat-message v-for="(message, index) in messageList" :key="index"
           :text="[message.text]"
-          :sent=false
+          :sent="isCurrUser(message.sender) ? false : true"
           class="chat-message-text"
           :bgColor="isMentioned(message.text) ? 'orange' : 'green'">
           <template v-slot:name>{{message.sender}}</template>
@@ -262,6 +262,11 @@ export default defineComponent({
       return mentionPattern.test(message_text);
     },
 
+    isCurrUser(message_sender) {
+      const user_name = supabase.auth.session().user.user_metadata.nickname;
+
+      return (message_sender === user_name); 
+    },
 
     selectSuggestion(suggestion: string) {
         this.messageText = `/join ${suggestion}`;

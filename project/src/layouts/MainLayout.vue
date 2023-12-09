@@ -60,6 +60,15 @@
           label="Add channel"
           @click="openCreateChannelModal"
         />
+
+        <q-btn
+          color="white"
+          class="create-channel-btn"
+          flat
+          icon="add"
+          label="Join channel"
+          @click="openJoinChannelModal"
+        />
       </div>  
       <div class="channel-section">
         <div class="separator-line"></div>
@@ -125,6 +134,25 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="joinChannelModalOpen" persistent>
+      <q-card>
+        <q-card-section>
+          <q-input
+            v-model="channelToJoin"
+            label="Channel Name"
+            @keyup.enter="joinChannel"
+            @keyup.escape="closeJoinChannelModal"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Join" color="positive" @click="joinChannel(channelToJoin)" />
+          <q-btn flat label="Cancel" @click="closeJoinChannelModal" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
   </q-layout>
 </template>
 
@@ -273,10 +301,12 @@ export default defineComponent({
       channels: [],
       exitModalOpen: false,
       createChannelModalOpen: false,
+      joinChannelModalOpen: false,
       newChannel: {
         name: '',
         isPrivate: false
       },
+      channelToJoin: '',
       showProfileDropdown: false,
       showStateDropdown: false,
       status: "online",
@@ -373,6 +403,10 @@ export default defineComponent({
       this.createChannelModalOpen = true;
     },
 
+    openJoinChannelModal() {
+      this.joinChannelModalOpen = true;
+    },
+
     createChannel() {
       if (this.newChannel.name.length < 1) {
         this.showNotif('Channel name is required');
@@ -380,7 +414,7 @@ export default defineComponent({
       } 
 
       if (this.newChannel.name.length > 20) {
-        this.showNotif("Surname can have a maximum of 20 characters!");
+        this.showNotif("Channel name can have a maximum of 20 characters!");
         return;
       }
 
@@ -393,9 +427,33 @@ export default defineComponent({
       this.closeCreateChannelModal();
     },
 
+    joinChannel(channel_name) {
+      const user_id = supabase.auth.session().user.id;
+
+      if (this.channelToJoin.length < 1) {
+        this.showNotif('Channel name is required');
+        return;
+      }
+
+      if (this.channelToJoin.length > 20) {
+        this.showNotif("Channel name can have a maximum of 20 characters!");
+        return;
+      }
+
+      this.socket.emit('join-from-button', {channel: channel_name, user: user_id});
+
+      this.channelToJoin = '';
+      this.closeJoinChannelModal();
+    },
+
     closeCreateChannelModal() {
       this.createChannelModalOpen = false;
     },
+
+    closeJoinChannelModal() {
+      this.joinChannelModalOpen = false;
+    },
+
     toggleProfileDropdown() {
       this.showProfileDropdown = !this.showProfileDropdown;
     },

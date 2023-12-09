@@ -119,6 +119,53 @@ Ws.io.on('connection', async (socket) => {
     socket.emit("suggestChannels", channelNames)
   });
 
+  socket.on('join-from-button', async(data) =>  { 
+    const channelName = data.channel;
+    const userdb = data.user as string
+    
+    let channel = await Channel.query().where('name', channelName).first();
+    let channeldb = channel?.id as number
+    
+    if (channeldb !== undefined) {
+      let isMember = await ChannelsUser.query().where('user', userdb).andWhere('channel', channeldb).first();
+
+      if(isMember){
+        socket.emit('join-channel',  "You are already member of this channel");
+        return
+      }  
+    }  
+    
+    if(channel && channel.type == "private") {
+      socket.emit('join-channel',  "You dont have permission to join this channel");
+    } else if (channel) {
+      //save to channeluserdb
+      await channel.related('users').attach([userdb]);
+
+      const channelSockets = channels.get(channel.id)
+      channelSockets.add(socket)
+
+      socket.emit('join-channel',  channel);
+    } else {
+      const newChannel = new Channel();
+      newChannel.fill({
+        name: channelName,
+        type: "public", //Mozno upravit
+        owner: userdb
+      });
+
+      await newChannel.save(); 
+      await newChannel.related('users').attach([userdb]);
+
+
+      channels.set(newChannel.id, new Set());
+      const channelSockets = channels.get(newChannel.id)
+      channelSockets.add(socket)
+
+      socket.emit("join-channel", newChannel)
+    }
+
+    return;
+  });
 
    socket.on('join', async ({channel_id, nickname}) => {
     channel_id = parseInt(channel_id)
