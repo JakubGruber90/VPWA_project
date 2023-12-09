@@ -10,7 +10,6 @@
           aria-label="Menu"
           @click="toggleLeftDrawer"
         />
-        <q-badge rounded color="red" label="3" class="badge-absolute-main"/>
       </div>
 
         <q-toolbar-title >
