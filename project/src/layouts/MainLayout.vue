@@ -88,7 +88,7 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view :socket="socket" />
+      <router-view :socket="socket" :currentChannel="currentChannel" />
     </q-page-container>
 
     <q-dialog v-model="exitModalOpen" persistent ref="leaveChannelModal">

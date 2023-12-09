@@ -28,7 +28,7 @@
           </template>
         </q-chat-message>
 
-      <div><UsersTyping :userTyping="userTyping"/><q-spinner-dots color="gray" size="17px"/></div>
+      <div><UsersTyping :userTyping="filteredUserTyping"/><q-spinner-dots color="gray" size="17px"/></div>
 
     </q-infinite-scroll>
 
@@ -114,6 +114,18 @@ export default defineComponent({
         }
       },
 
+  props: {
+    currentChannel: Object, // Change the type accordingly
+  },
+
+  computed: {
+    filteredUserTyping() {
+      const channelName = this.currentChannel ? this.currentChannel.name : null;
+
+      return this.userTyping.filter(item => item.channel === channelName);
+    },
+  },
+
   data () {
     return {
       showSuggestions: false,
@@ -141,9 +153,9 @@ export default defineComponent({
 
       if (!this.messageText.startsWith('/join ')) {
         this.showSuggestions = false;
-        return;
       }
 
+      console.log(this.currentChannel)
       this.socket?.emit('chatTyping', { message: this.messageText, channel_id: channel_id });
     },
   },
@@ -163,8 +175,6 @@ export default defineComponent({
 
     next();
   },
-
-  //toto mozno opravit lebo zas inicializujem socket
 
   mounted() {
 
@@ -226,34 +236,25 @@ export default defineComponent({
     });
 
     this.socket.on('chatTyping', (data: any) => {
+      console.log("som tu")
       const existsIndex = this.userTyping.findIndex((element) => {
-        return element.user === data.user && element.channel === data.channel;
+        return element.user === data.user;
       });
 
       console.log(existsIndex);
       console.log("this.userTyping");
 
       const newRecord: ChannelData = {
-        channel: data.channel,
+        channel: data.channelName,
         message: data.message,
         user: data.user,
       };
-/*
+
       if (existsIndex === -1) {
-        console.log("New record");
         this.userTyping.push(newRecord);
       } else {
-        console.log("Existing record");
         this.userTyping[existsIndex] = newRecord;
       }
-
-      this.userTyping.forEach((channelData, index) => {
-        console.log(`Index ${index}:`);
-        console.log("Channel:", channelData.channel);
-        console.log("Message:", channelData.message);
-        console.log("User:", channelData.user);
-      });
-      */
     });
 
     this.socket.on('update-status', (data)=> { 

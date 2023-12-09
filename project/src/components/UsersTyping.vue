@@ -46,6 +46,19 @@ export default defineComponent({
     },
   },
 
+  watch: {
+    userTyping: {
+      handler(newVal) {
+        if (newVal && newVal.length > 0) {
+          const user = newVal[0];
+          this.userMessage = user.message;
+          this.userName = user.user;
+        }
+      },
+      deep: true,
+    },
+  },
+
   data () {
     return {
       messageDialogeOpened: false,
