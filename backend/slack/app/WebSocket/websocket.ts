@@ -9,9 +9,8 @@ import Notification from 'App/Models/Notification';
 import ChannelsUser from 'App/Models/ChannelsUser';
 import Database from '@ioc:Adonis/Lucid/Database';
 import KickUser from 'App/Models/KickUsers';
-import commands from 'commands';
 
-Ws.boot()
+Ws.boot()   
 
 
 const users = new Map(); 
@@ -112,11 +111,19 @@ Ws.io.on('connection', async (socket) => {
   });
 
   socket.on('suggestChannels', async() => {
+    let channelsNames: any = [];
+    const user_id = socket.handshake.query.user_id as string
     let channels = await Channel.query().where('type', 'public');
 
-    const channelNames = channels.map(channel => channel.$attributes.name);
+    for (const channel of channels) {
+      const channelUser = await ChannelsUser.query().where('channel', channel.id).andWhere('user', user_id).first();
+      if (!channelUser) {
+        console.log("som tu")
+        channelsNames.push(channel.name);
+      }
+    }
 
-    socket.emit("suggestChannels", channelNames)
+    socket.emit("suggestChannels", channelsNames)
   });
 
 

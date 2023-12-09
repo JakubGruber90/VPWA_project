@@ -57,10 +57,11 @@
       <div v-if="showSuggestions" class="channel-suggestions">
         <ul>
           <li v-for="(channel, index) in channelSuggestions" :key="index" @click="selectSuggestion(channel)">
-            {{ "a" }}
+            {{ channel }}
           </li>
         </ul>
       </div>
+
       <q-form v-on:submit="sendMessage" class="full-width input">
         <q-input 
         v-model="messageText" 
@@ -112,6 +113,7 @@ export default defineComponent({
           isAppVis
         }
       },
+
   data () {
     return {
       showSuggestions: false,
@@ -132,9 +134,14 @@ export default defineComponent({
   watch: {
     messageText() {
       const channel_id = this.$route.params.id;
-      if (this.messageText === '/join') {
+      if (this.messageText === '/join ') {
         this.socket.emit('suggestChannels');
         this.updateSuggestions();
+      }
+
+      if (!this.messageText.startsWith('/join ')) {
+        this.showSuggestions = false;
+        return;
       }
 
       this.socket?.emit('chatTyping', { message: this.messageText, channel_id: channel_id });
@@ -211,7 +218,10 @@ export default defineComponent({
     });
 
     this.socket.on('suggestChannels', (data: any) => {
+      console.log(data);
       this.channelSuggestions = data;
+      console.log(this.channelSuggestions);
+      console.log(this.channelSuggestions[0])
       this.showSuggestions = true;
     });
 
@@ -228,7 +238,7 @@ export default defineComponent({
         message: data.message,
         user: data.user,
       };
-
+/*
       if (existsIndex === -1) {
         console.log("New record");
         this.userTyping.push(newRecord);
@@ -243,6 +253,7 @@ export default defineComponent({
         console.log("Message:", channelData.message);
         console.log("User:", channelData.user);
       });
+      */
     });
 
     this.socket.on('update-status', (data)=> { 
@@ -392,14 +403,21 @@ export default defineComponent({
   padding: 10px;
   background-color: #fff;
 }
+
 .channel-suggestions ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .channel-suggestions li {
   cursor: pointer;
   padding: 5px;
   border-bottom: 1px solid #eee;
+  color: #000; /* Set text color */
+}
+
+.channel-suggestions li:hover {
+  background-color: #f0f0f0; /* Set background color on hover */
 }
 </style>
