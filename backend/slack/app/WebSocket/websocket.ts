@@ -308,7 +308,13 @@ Ws.io.on('connection', async (socket) => {
             socket.emit('invite', 'You do not have permission to invite to this channel');
             return
           } else {
-            socket.emit('invite', channel);
+            const userSocket = users.get(nickname);
+            let sockets = channels.get(channel_id);
+            sockets.add(userSocket);
+              
+            if (userSocket) {
+              userSocket.emit('invite', channel);
+            }
 
             const newChannel = new ChannelsUser();
             newChannel.fill({
