@@ -28,7 +28,7 @@
           </template>
         </q-chat-message>
 
-      <div><UsersTyping/><q-spinner-dots color="gray" size="17px"/></div>
+      <div><UsersTyping :userTyping="filteredUserTyping"/><q-spinner-dots color="gray" size="17px"/></div>
 
     </q-infinite-scroll>
 
@@ -57,10 +57,11 @@
       <div v-if="showSuggestions" class="channel-suggestions">
         <ul>
           <li v-for="(channel, index) in channelSuggestions" :key="index" @click="selectSuggestion(channel)">
-            {{ "a" }}
+            {{ channel }}
           </li>
         </ul>
       </div>
+
       <q-form v-on:submit="sendMessage" class="full-width input">
         <q-input 
         v-model="messageText" 
@@ -91,6 +92,19 @@ import { ref, watch } from 'vue'
 import { data } from 'autoprefixer';
 import axios from 'axios';
 
+interface ChannelData {
+  channel: string;
+  message: string; 
+  user: string;
+}
+
+interface MessageData {
+  text: string;
+  sender: string;
+  created_at: string;
+  badgeColor: string;
+}
+
 export default defineComponent({
   name: 'IndexPage',
   components: { UsersTyping },
@@ -106,6 +120,19 @@ export default defineComponent({
           isAppVis
         }
       },
+
+  props: {
+    currentChannel: Object, // Change the type accordingly
+  },
+
+  computed: {
+    filteredUserTyping() {
+      const channelName = this.currentChannel ? this.currentChannel.name : null;
+
+      return this.userTyping.filter(item => item.channel === channelName);
+    },
+  },
+
   data () {
     return {
       showSuggestions: false,
@@ -116,21 +143,27 @@ export default defineComponent({
       messageText: '',
       isLoading: false,
       userChannel: [],
-      messageList: [],
-      userTyping: new Map(),
+      messageList: [] as MessageData[],
+      userTyping: [] as ChannelData[],
       endOfDB: false,
-      Socket: Object,
+      socket: {} as Socket,
+      Socket: {} as Socket,
     }
   },
 
   watch: {
     messageText() {
       const channel_id = this.$route.params.id;
-      if (this.messageText === '/join') {
+      if (this.messageText === '/join ') {
         this.socket.emit('suggestChannels');
         this.updateSuggestions();
       }
 
+      if (!this.messageText.startsWith('/join ')) {
+        this.showSuggestions = false;
+      }
+
+      console.log(this.currentChannel)
       this.socket?.emit('chatTyping', { message: this.messageText, channel_id: channel_id });
     },
   },
@@ -151,14 +184,21 @@ export default defineComponent({
     next();
   },
 
-  //toto mozno opravit lebo zas inicializujem socket
-
   mounted() {
 
-    const user_id = supabase.auth.session().user.id;
-    const user_name = supabase.auth.session().user.user_metadata.nickname;
     const channel_id = this.$route.params.id;
     const auth_token = supabase.auth.session()?.access_token;
+
+    const authSession = supabase.auth.session();
+    let user_name = '';
+    let user_id = '';
+
+    if (authSession && authSession.user) {
+      user_id = authSession.user.id;
+      if (authSession.user.user_metadata) {
+        user_name = authSession.user.user_metadata.nickname;
+      }
+    }
 
     initializeSocket(user_id, user_name);
 
@@ -173,10 +213,8 @@ export default defineComponent({
     });
 
     this.socket.on('user-list', (data: any) => {
-      console.log(data)
-
       if(data.length > 0) {
-        this.userData = data.flatMap(innerArray => innerArray.map(obj => obj.nickname));
+        this.userData = data.flatMap((innerArray: any[]) => innerArray.map(obj => obj.nickname));
         this.showUserListModal = true;
       }
     });
@@ -205,16 +243,33 @@ export default defineComponent({
     });
 
     this.socket.on('suggestChannels', (data: any) => {
+      console.log(data);
       this.channelSuggestions = data;
+      console.log(this.channelSuggestions);
+      console.log(this.channelSuggestions[0])
       this.showSuggestions = true;
     });
 
-    this.socket.on('chatTyping', (message:any, user:any) => {
-      this.userTyping.set(user, message);
-      console.log(this.userTyping);
-      const keysArray = Array.from(this.userTyping.keys());
+    this.socket.on('chatTyping', (data: any) => {
+      console.log("som tu")
+      const existsIndex = this.userTyping.findIndex((element) => {
+        return element.user === data.user;
+      });
 
-      console.log(keysArray);
+      console.log(existsIndex);
+      console.log("this.userTyping");
+
+      const newRecord: ChannelData = {
+        channel: data.channelName,
+        message: data.message,
+        user: data.user,
+      };
+
+      if (existsIndex === -1) {
+        this.userTyping.push(newRecord);
+      } else {
+        this.userTyping[existsIndex] = newRecord;
+      }
     });
 
     this.socket.on('update-status', (data)=> { 
@@ -256,8 +311,8 @@ export default defineComponent({
   },
 
   methods: {
-    isMentioned(message_text) {
-      const current_user_name = supabase.auth.session().user.user_metadata.nickname;
+    isMentioned(message_text: string) {
+      const current_user_name = supabase.auth.session()?.user?.user_metadata?.nickname || '';
       const mentionPattern = new RegExp(`@${current_user_name}\\b`, 'i');
       return mentionPattern.test(message_text);
     },
@@ -369,14 +424,21 @@ export default defineComponent({
   padding: 10px;
   background-color: #fff;
 }
+
 .channel-suggestions ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .channel-suggestions li {
   cursor: pointer;
   padding: 5px;
   border-bottom: 1px solid #eee;
+  color: #000; /* Set text color */
+}
+
+.channel-suggestions li:hover {
+  background-color: #f0f0f0; /* Set background color on hover */
 }
 </style>
