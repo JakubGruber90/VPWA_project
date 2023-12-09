@@ -1,9 +1,9 @@
 <template>
-  <span>
+  <span v-if="filteredUserTyping.length > 0">
     <a class="user">
       <q-popup-proxy anchor="bottom right" self="top right">
         <q-list class="typingUserList">
-          <q-item clickable v-for="(user, index) in userTyping" :key="index" @click="openMessageDialog(user)">
+          <q-item clickable v-for="(user, index) in filteredUserTyping" :key="index" @click="openMessageDialog(user)">
             <a>
               <q-avatar :name="user.user" class="q-mb-sm">
               <!--  <img :src="user.avatar" /> -->
@@ -29,6 +29,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
+import { supabase } from 'app/config/supabase';
 
 interface UserTypingData {
   user: string;
@@ -48,14 +49,36 @@ export default defineComponent({
 
   watch: {
     userTyping: {
-      handler(newVal) {
+      handler(newVal, oldVal) {
         if (newVal && newVal.length > 0) {
-          const user = newVal[0];
-          this.userMessage = user.message;
-          this.userName = user.user;
+          const changedIndex = newVal.findIndex(
+            (newUser:any, index:any) =>
+              oldVal &&
+              oldVal.length > index &&
+              (newUser.user !== oldVal[index].user ||
+                newUser.message !== oldVal[index].message)
+          );
+
+          if (changedIndex !== -1) {
+            const changedUser = newVal[changedIndex];
+            this.userMessage = changedUser.message;
+            this.userName = changedUser.user;
+          }
         }
       },
       deep: true,
+    },
+  },
+
+  computed: {
+    filteredUserTyping(): UserTypingData[] {
+      let user;
+      const authSession = supabase.auth.session();
+      if (authSession?.user) {
+        user = authSession.user.user_metadata.nickname;
+      }
+      const currentUser = user;
+      return this.userTyping.filter(user => user.user !== currentUser);
     },
   },
 

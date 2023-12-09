@@ -122,7 +122,7 @@ export default defineComponent({
       },
 
   props: {
-    currentChannel: Object, // Change the type accordingly
+    currentChannel: Object, 
   },
 
   computed: {
@@ -218,10 +218,6 @@ export default defineComponent({
       }
     });
 
-    this.socket.on('invite', (data: any) => {
-      console.log(data)
-    })
-
     this.socket.on('add-new-message', (data) => {
         if(!this.isAppVis){
           const channel_id = this.$route.params.id;
@@ -250,13 +246,9 @@ export default defineComponent({
     });
 
     this.socket.on('chatTyping', (data: any) => {
-      console.log("som tu")
       const existsIndex = this.userTyping.findIndex((element) => {
         return element.user === data.user;
       });
-
-      console.log(existsIndex);
-      console.log("this.userTyping");
 
       const newRecord: ChannelData = {
         channel: data.channelName,

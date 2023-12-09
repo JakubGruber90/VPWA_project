@@ -10,7 +10,6 @@
           aria-label="Menu"
           @click="toggleLeftDrawer"
         />
-        <q-badge rounded color="red" label="3" class="badge-absolute-main"/>
       </div>
 
         <q-toolbar-title >
@@ -74,10 +73,10 @@
         <div class="separator-line"></div>
         <div class="section-title">Public Channels</div>
         <div class="separator-line"></div>
-        <div class="channel" v-for="(channel, index) in publicChannels" :key="index"  @click="() => navigateToChannel(channel.id)">
+        <div class="channel" v-for="(channel, index) in publicChannels" :key="index"  @click="() => navigateToChannel(channel)">
           <div class="channel-text">
             {{ channel.name }}
-            <q-badge v-if="channel.name === 'Channel 2'" rounded color="red" label="3" class="badge-absolute"/>
+            <q-badge v-if="channel.isNew === true" rounded color="red" label="NEW" class="badge-absolute"/>
           </div> 
           <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.id)" />     
         </div>
@@ -86,10 +85,10 @@
         <div class="separator-line"></div>
         <div class="section-title">Private Channels</div>
         <div class="separator-line"></div>
-        <div class="channel" v-for="(channel, index) in privateChannels" :key="index" @click="() => navigateToChannel(channel.id)">
+        <div class="channel" v-for="(channel, index) in privateChannels" :key="index" @click="() => navigateToChannel(channel)">
           <div class="channel-text">
             {{ channel.name }}
-            <q-badge v-if="channel.name === 'Channel 1'" rounded color="red" label="NEW" class="badge-absolute"/>
+            <q-badge v-if="channel.isNew === true" rounded color="red" label="NEW" class="badge-absolute"/>
           </div> 
           <q-icon name="exit_to_app" class="exit-icon" @click="openExitModal(channel.id)" />     
         </div>
@@ -171,6 +170,7 @@ interface Channel {
   name: string;
   type: string;
   owner: string;
+  isNew?: boolean;
 }
 
 export default defineComponent({
@@ -286,6 +286,7 @@ export default defineComponent({
       if (typeof data === 'string') {
         alert(data);
       } else {
+        data.isNew = true;
         this.channels = [data, ...this.channels];
       }
     });
@@ -506,8 +507,12 @@ export default defineComponent({
       }
     },
 
-    navigateToChannel(channelId: number){
-      this.$router.push({ name: 'channelPage', params: { id: channelId } });
+    navigateToChannel(channel: Channel){
+      if(channel.isNew) {
+        channel.isNew = false;
+      }
+
+      this.$router.push({ name: 'channelPage', params: { id: channel.id } });
     }
   }
 });
