@@ -263,7 +263,7 @@ export default defineComponent({
     });
 
     this.socket.on("notification-send", (notification,username) => {
-      if(this.notifsOff && !notification.text.includes(supabase.auth.session().user.user_metadata.nickname && this.status !== 'dnd')) {
+      if((this.notifsOff && !notification.text.includes(supabase.auth.session().user.user_metadata.nickname)) || this.status === 'dnd') {
         return
       }
       if (Notification.permission === 'granted') {

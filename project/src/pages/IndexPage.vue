@@ -1,10 +1,10 @@
 <template>
   <q-page>
    
-      <q-infinite-scroll ref="infScroll" :scroll-target="$refs.infScroll" :key="$route.params.id" :initial-index="0" reverse class="scroll" @load="onLoad" :offset="35">
+      <q-infinite-scroll ref="infScroll" :scroll-target="$refs.infScroll" :key="$route.params.id" :initial-index="0" reverse class="scroll" @load="onLoad" :offset="0">
 
         <template v-slot:loading>  
-          <div v-if="!endOfDB" class="row justify-center q-my-md">
+          <div class="row justify-center q-my-md">
             <q-spinner-dots color="primary" size="40px" />
           </div>
         </template>
@@ -145,7 +145,6 @@ export default defineComponent({
       userChannel: [],
       messageList: [] as MessageData[],
       userTyping: [] as ChannelData[],
-      endOfDB: false,
       socket: {} as Socket,
       Socket: {} as Socket,
     }
@@ -171,7 +170,7 @@ export default defineComponent({
   beforeRouteUpdate(to, from, next) {
     const newChannelId = to.params.id;
     const auth_token = supabase.auth.session()?.access_token;
-    this.endOfDB = false;
+    this.messageList = [];
 
     axios.get(`http://localhost:3333/channels/initial_messages/${newChannelId}`,
       {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
@@ -317,7 +316,7 @@ export default defineComponent({
       return mentionPattern.test(message_text);
     },
 
-    isCurrUser(message_sender) {
+    isCurrUser(message_sender: string) {
       const user_name = supabase.auth.session().user.user_metadata.nickname;
 
       return (message_sender === user_name); 
@@ -362,38 +361,34 @@ export default defineComponent({
       }
     },
 
-    async onLoad(index: number, done: () => void) {
+    async onLoad(index: number, done: (stop: boolean) => void) {
       try {
         const auth_token = supabase.auth.session()?.access_token
         const limit = 20;
         const start = index * limit;
         const channel_id = this.$route.params.id;
 
-        await new Promise(resolve => setTimeout(resolve, 500)); //delay, aby bolo vidno loading
+        await new Promise(resolve => setTimeout(resolve, 1000)); //delay, aby bolo vidno loading
 
         axios.get(`http://localhost:3333/channels/older_messages?channel_id=${channel_id}&start=${start}&limit=${limit}`,
         {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {
         
           const olderMessages = response.data;
           
-          if(!this.endOfDB) {
-            console.log('Loading older messages\n');
-            console.log(this.endOfDB);
-            this.messageList = [...olderMessages, ...this.messageList];
-            if(olderMessages.length < limit) {
-              this.endOfDB = true;
-              console.log('No more messages in database');
-              console.log(this.endOfDB);
-              return;
-            }
-          }
+          this.messageList = [...olderMessages, ...this.messageList];
 
+          if(olderMessages.length < limit) {
+            console.log('No more messages in database');
+            done(true);
+          } else {
+            done(false);
+          }
+          
         });
 
-        done();
       } catch (error) {
         console.error('Error in onLoad: ', error);
-        done();
+        done(true);
       }
     },
   }

@@ -3,49 +3,6 @@ import Channel from "../Models/Channel.ts"
 import ChannelsUser from 'App/Models/ChannelsUser';
 var cron = require('node-cron');
 
-/* class CheckChannel {
-    async run() {
-        console.log("a")
-        const thirtyDays = 10000;
-        const channels = await Channel.all();
-
-        const currentDate = DateTime.now();
-
-        channels.forEach(async (channel, channelName) => {
-            const updatedAtDate = DateTime.fromJSDate(channel.updatedAt.toJSDate());
-            const daysDifference = currentDate.diff(updatedAtDate, 'days').toObject().days;
-        
-            if (daysDifference && daysDifference > thirtyDays) {
-                await channel.delete();
-                console.log(`Channel "${channelName}" deleted due to inactivity.`);
-            }
-        });
-    }
-
-}
-  module.exports = CheckChannel; */
-
-
-/* cron.schedule('* * * * * *', async () => {
-    console.log("a")
-    const thirtyDays = 10000;
-    const channels = await Channel.all();
-
-    const currentDate = DateTime.now();
-
-    channels.forEach(async (channel, channelName) => {
-        const updatedAtDate = DateTime.fromJSDate(channel.updatedAt.toJSDate());
-        const daysDifference = currentDate.diff(updatedAtDate, 'days').toObject().days;
-    
-        if (daysDifference && daysDifference > thirtyDays) {
-            await channel.delete();
-            console.log(`Channel "${channelName}" deleted due to inactivity.`);
-        }
-    });
-});
-
- */
-
 import { BaseTask, CronTimeV2 } from 'adonis5-scheduler/build/src/Scheduler/Task'
 import Message from 'App/Models/Message';
 /* import Ws from '../WebSocket/Ws'
@@ -68,7 +25,7 @@ export default class ChannelCheck extends BaseTask {
 
   public async handle() {
 
-    const thirtyDays = 10;
+    const thirtyDays = 2592000 ;
     const latestRecords = await Message.query().select('*').max('created_at').groupBy('channel');
 
 
