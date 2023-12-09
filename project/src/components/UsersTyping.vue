@@ -29,6 +29,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
+import { supabase } from 'app/config/supabase';
 
 interface UserTypingData {
   user: string;
@@ -57,6 +58,19 @@ export default defineComponent({
       },
       deep: true,
     },
+  },
+
+  computed: {
+    filteredUserTyping(): UserTypingData[] {
+      return this.userTyping.filter(user => user.user !== this.userName);
+    },
+  },
+
+  created() {
+    const authSession = supabase.auth.session();
+    if (authSession?.user) {
+      this.userName = authSession.user.user_metadata.nickname;
+    }
   },
 
   data () {
