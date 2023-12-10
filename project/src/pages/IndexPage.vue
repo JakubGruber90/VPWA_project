@@ -255,8 +255,13 @@ export default defineComponent({
       const newRecord: ChannelData = {
         channel: data.channelName,
         message: data.message,
-        user: data.user,
+        user: data.user, 
       };
+
+      if(data.message === '') {
+        this.userTyping.splice(existsIndex, 1);
+        return;
+      }
 
       if (existsIndex === -1) {
         this.userTyping.push(newRecord);
