@@ -44,17 +44,19 @@ export async function leaveChannel(channel_id, user_id, channels, socket){
 }
 
 export async function getUserList(channel_id, socket) {
-    const usernames: any = [];
+  const usersInfo = [];
 
-    const usersIds = await Database.rawQuery('select user from channels_users where channel = ?', [channel_id])
+  const users = await Database.rawQuery('SELECT users.nickname, users.status FROM users JOIN channels_users ON users.id = channels_users.user WHERE channels_users.channel = ?', [channel_id]);
 
-    await Promise.all(usersIds.map(async (userid) => {
-      const name = await Database.rawQuery('select nickname from users where id = ?', [userid.user])
-      usernames.push(name)
-    }));
+  for (const user of users) {
+    usersInfo.push({
+      nickname: user.nickname,
+      status: user.status,
+    });
+  }
 
-    console.log(usernames)
+  console.log(usersInfo);
 
-    socket.emit('user-list', usernames)
+  socket.emit('user-list', usersInfo);
 }
 

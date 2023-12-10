@@ -1,7 +1,7 @@
 <template>
   <q-page>
    
-      <q-infinite-scroll ref="infScroll" :scroll-target="$refs.infScroll" :key="$route.params.id" :initial-index="0" reverse class="scroll" @load="onLoad" :offset="0">
+      <q-infinite-scroll ref="infScroll" :key="$route.params.id" reverse class="scroll" @load="onLoad" :offset="0">
 
         <template v-slot:loading>  
           <div class="row justify-center q-my-md">
@@ -28,7 +28,7 @@
           </template>
         </q-chat-message>
 
-      <div><UsersTyping :userTyping="filteredUserTyping"/><q-spinner-dots color="gray" size="17px"/></div>
+      <div><UsersTyping :userTyping="filteredUserTyping"/></div>
 
     </q-infinite-scroll>
 
@@ -42,7 +42,7 @@
         <q-card-section>
           <q-list bordered separator>
             <q-item v-for="(user, index) in userData" :key="index">
-              <q-item-section>{{user}}</q-item-section>
+              <q-item-section>{{user.nickname}}: {{ user.status }}</q-item-section>
             </q-item>
           </q-list>
         </q-card-section>
@@ -91,6 +91,7 @@ import { useQuasar } from 'quasar'
 import { ref, watch } from 'vue'
 import { data } from 'autoprefixer';
 import axios from 'axios';
+import { threadId } from 'worker_threads';
 
 interface ChannelData {
   channel: string;
@@ -212,11 +213,12 @@ export default defineComponent({
     });
 
     this.socket.on('user-list', (data: any) => {
-      if(data.length > 0) {
-        this.userData = data.flatMap((innerArray: any[]) => innerArray.map(obj => obj.nickname));
-        this.showUserListModal = true;
+      if (data.length > 0) {
+      this.userData = data;
+      this.showUserListModal = true;
       }
     });
+
 
     this.socket.on('add-new-message', (data) => {
         if(!this.isAppVis){
@@ -360,7 +362,7 @@ export default defineComponent({
         const start = index * limit;
         const channel_id = this.$route.params.id;
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); //delay, aby bolo vidno loading
+        await new Promise(resolve => setTimeout(resolve, 500)); //delay, aby bolo vidno loading
 
         axios.get(`http://localhost:3333/channels/older_messages?channel_id=${channel_id}&start=${start}&limit=${limit}`,
         {headers: { Authorization: `Bearer ${auth_token}`}}).then((response) => {

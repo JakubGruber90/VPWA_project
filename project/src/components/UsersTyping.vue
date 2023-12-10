@@ -24,6 +24,7 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+    <q-spinner-dots v-if="filteredUserTyping.length > 0" color="gray" size="17px"/>
 </template>
 
 
