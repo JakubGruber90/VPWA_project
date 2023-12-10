@@ -53,7 +53,7 @@ export default defineComponent({
       handler(newVal, oldVal) {
         if (newVal && newVal.length > 0) {
           const changedIndex = newVal.findIndex(
-            (newUser:any, index:any) =>
+            (newUser: any, index: any) =>
               oldVal &&
               oldVal.length > index &&
               (newUser.user !== oldVal[index].user ||
@@ -62,8 +62,12 @@ export default defineComponent({
 
           if (changedIndex !== -1) {
             const changedUser = newVal[changedIndex];
-            this.userMessage = changedUser.message;
-            this.userName = changedUser.user;
+
+            // Check if the changed user is the one currently displayed
+            if (changedUser.user === this.userName) {
+              this.userMessage = changedUser.message;
+              this.userName = changedUser.user;
+            }
           }
         }
       },
